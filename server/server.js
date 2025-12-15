@@ -18,14 +18,15 @@ app.use(cors({
             'http://localhost:5173', 'http://127.0.0.1:5173',
             'http://localhost:5174', 'http://127.0.0.1:5174',
             'http://localhost:5175', 'http://127.0.0.1:5175',
-            process.env.CLIENT_URL,
-            process.env.ADMIN_URL
+            process.env.CLIENT_URL?.replace(/\/$/, ''), // Remove trailing slash if present
+            process.env.ADMIN_URL?.replace(/\/$/, '')
         ].filter(Boolean); // Remove undefined if env vars are missing
 
         if (!origin || allowedOrigins.includes(origin) || origin.startsWith('http://localhost:') || origin.startsWith('http://127.0.0.1:') || allowedOrigins.some(o => origin === o)) {
             callback(null, true);
         } else {
             console.log('CORS Blocked:', origin);
+            console.log('Allowed Origins:', allowedOrigins);
             callback(new Error('Not allowed by CORS'));
         }
     },

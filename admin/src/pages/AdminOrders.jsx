@@ -1,5 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import api from '../api';
+import {
+    Search, Calendar, Clock, Package, Eye, Trash2, X, User, MapPin,
+    CreditCard, CheckCircle, Truck, AlertCircle, ChevronDown
+} from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 
 const AdminOrders = () => {
     const [orders, setOrders] = useState([]);

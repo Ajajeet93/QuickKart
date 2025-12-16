@@ -48,19 +48,23 @@ app.use(cookieParser());
 
 // Session Configuration
 app.use(session({
-    secret: process.env.SESSION_SECRET || 'your_secret_key', // Use environment variable
+    secret: process.env.SESSION_SECRET || 'your_secret_key',
     resave: false,
-    saveUninitialized: false, // Don't create session until something stored
+    saveUninitialized: false,
     store: MongoStore.create({
         mongoUrl: process.env.MONGODB_URI || 'mongodb://127.0.0.1:27017/QuickKart',
         collectionName: 'sessions',
-        ttl: 24 * 60 * 60 // 1 day
+        ttl: 24 * 60 * 60
     }),
     cookie: {
-        httpOnly: true, // Prevent client-side JS access
-        secure: process.env.NODE_ENV === 'production', // Secure in production
-        maxAge: 1000 * 60 * 60 * 24, // 1 day
-        sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax' // 'lax' for local dev
+        httpOnly: true,
+        // Secure if in production OR if explicitly defined
+        secure: process.env.NODE_ENV === 'production',
+        maxAge: 1000 * 60 * 60 * 24,
+        // sameSite 'none' is required for cross-site cookie (Render backend <-> Vercel frontend)
+        // If 'none', secure MUST be true.
+        // We enforce this relationship to avoid invalid configurations.
+        sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax'
     }
 }));
 

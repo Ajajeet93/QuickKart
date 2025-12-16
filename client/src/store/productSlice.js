@@ -1,12 +1,12 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
-import API_URL from '../config';
+import api from '../api';
 
 // Async thunk to fetch products with caching
 export const fetchProducts = createAsyncThunk(
     'products/fetchProducts',
     async (params, { rejectWithValue, getState }) => {
         try {
-            let url = `${API_URL}/api/products`;
+            let url = '/api/products';
             const query = new URLSearchParams();
 
             // Handle params
@@ -36,16 +36,10 @@ export const fetchProducts = createAsyncThunk(
 
             if (queryString) url += `?${queryString}`;
 
-            const response = await fetch(url);
-
-            if (!response.ok) {
-                throw new Error('Failed to fetch products');
-            }
-
-            const data = await response.json();
-            return { ...data, cacheKey }; // Pass cacheKey to save it
+            const response = await api.get(url);
+            return { ...response.data, cacheKey }; // Pass cacheKey to save it
         } catch (error) {
-            return rejectWithValue(error.message);
+            return rejectWithValue(error.response?.data?.message || 'Failed to fetch products');
         }
     }
 );
@@ -55,13 +49,10 @@ export const fetchProductById = createAsyncThunk(
     'products/fetchProductById',
     async (id, { rejectWithValue }) => {
         try {
-            const response = await fetch(`${API_URL}/api/products/${id}`);
-            if (!response.ok) {
-                throw new Error('Failed to fetch product');
-            }
-            return await response.json();
+            const response = await api.get(`/api/products/${id}`);
+            return response.data;
         } catch (error) {
-            return rejectWithValue(error.message);
+            return rejectWithValue(error.response?.data?.message || 'Failed to fetch product');
         }
     }
 );

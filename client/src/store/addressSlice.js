@@ -1,26 +1,16 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import { logoutUser } from './authSlice';
-import API_URL from '../config';
+import api from '../api';
 
 // Fetch Addresses
 export const fetchAddresses = createAsyncThunk(
     'addresses/fetchAddresses',
     async (_, { rejectWithValue }) => {
         try {
-            const response = await fetch(`${API_URL}/api/user/addresses`, {
-                method: 'GET',
-                headers: { 'Content-Type': 'application/json' },
-                credentials: 'include'
-            });
-
-            if (!response.ok) {
-                return rejectWithValue('Failed to fetch addresses');
-            }
-
-            const data = await response.json();
-            return data;
+            const response = await api.get('/api/user/addresses');
+            return response.data;
         } catch (error) {
-            return rejectWithValue(error.message);
+            return rejectWithValue(error.response?.data?.message || 'Failed to fetch addresses');
         }
     }
 );
@@ -30,21 +20,10 @@ export const addNewAddress = createAsyncThunk(
     'addresses/addNewAddress',
     async (addressData, { rejectWithValue }) => {
         try {
-            const response = await fetch(`${API_URL}/api/user/addresses`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                credentials: 'include',
-                body: JSON.stringify(addressData)
-            });
-
-            if (!response.ok) {
-                return rejectWithValue('Failed to add address');
-            }
-
-            const data = await response.json();
-            return data;
+            const response = await api.post('/api/user/addresses', addressData);
+            return response.data;
         } catch (error) {
-            return rejectWithValue(error.message);
+            return rejectWithValue(error.response?.data?.message || 'Failed to add address');
         }
     }
 );
@@ -54,21 +33,10 @@ export const updateAddress = createAsyncThunk(
     'addresses/updateAddress',
     async ({ id, addressData }, { rejectWithValue }) => {
         try {
-            const response = await fetch(`${API_URL}/api/user/addresses/${id}`, {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
-                credentials: 'include',
-                body: JSON.stringify(addressData)
-            });
-
-            if (!response.ok) {
-                return rejectWithValue('Failed to update address');
-            }
-
-            const data = await response.json();
-            return data;
+            const response = await api.put(`/api/user/addresses/${id}`, addressData);
+            return response.data;
         } catch (error) {
-            return rejectWithValue(error.message);
+            return rejectWithValue(error.response?.data?.message || 'Failed to update address');
         }
     }
 );
@@ -78,18 +46,10 @@ export const deleteAddress = createAsyncThunk(
     'addresses/deleteAddress',
     async (id, { rejectWithValue }) => {
         try {
-            const response = await fetch(`${API_URL}/api/user/addresses/${id}`, {
-                method: 'DELETE',
-                credentials: 'include'
-            });
-
-            if (!response.ok) {
-                return rejectWithValue('Failed to delete address');
-            }
-
+            await api.delete(`/api/user/addresses/${id}`);
             return id; // Return ID to remove from state
         } catch (error) {
-            return rejectWithValue(error.message);
+            return rejectWithValue(error.response?.data?.message || 'Failed to delete address');
         }
     }
 );

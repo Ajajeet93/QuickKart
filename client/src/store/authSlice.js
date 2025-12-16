@@ -1,36 +1,22 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
-import API_URL from '../config';
+import api from '../api';
 
 // Async thunk for login
 export const loginUser = createAsyncThunk('auth/loginUser', async (credentials, { rejectWithValue }) => {
     try {
-        const response = await fetch(`${API_URL}/api/auth/login`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            credentials: 'include',
-            body: JSON.stringify(credentials)
-        });
-        const data = await response.json();
-        if (!response.ok) throw new Error(data.message || 'Login failed');
-        return data.user;
+        const response = await api.post('/api/auth/login', credentials);
+        return response.data.user;
     } catch (error) {
-        return rejectWithValue(error.message);
+        return rejectWithValue(error.response?.data?.message || 'Login failed');
     }
 });
 
 export const googleLogin = createAsyncThunk('auth/googleLogin', async (credential, { rejectWithValue }) => {
     try {
-        const response = await fetch(`${API_URL}/api/auth/google`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            credentials: 'include',
-            body: JSON.stringify({ credential })
-        });
-        const data = await response.json();
-        if (!response.ok) throw new Error(data.message || 'Google Login failed');
-        return data.user; // Return user object directly to match loginUser behavior
+        const response = await api.post('/api/auth/google', { credential });
+        return response.data.user;
     } catch (error) {
-        return rejectWithValue(error.message);
+        return rejectWithValue(error.response?.data?.message || 'Google Login failed');
     }
 });
 
@@ -39,10 +25,7 @@ export const logoutUser = createAsyncThunk(
     'auth/logoutUser',
     async (_, { rejectWithValue }) => {
         try {
-            await fetch(`${API_URL}/api/auth/logout`, {
-                method: 'POST',
-                credentials: 'include'
-            });
+            await api.post('/api/auth/logout');
         } catch (error) {
             console.error('Logout error', error);
         }
@@ -54,21 +37,10 @@ export const loadUser = createAsyncThunk(
     'auth/loadUser',
     async (_, { rejectWithValue }) => {
         try {
-            const response = await fetch(`${API_URL}/api/auth/me`, {
-                method: 'GET',
-                credentials: 'include'
-            });
-
-            if (!response.ok) {
-                // Determine if 401/403 or just temp error?
-                // For now, if failed, assume not logged in or token expired.
-                return rejectWithValue('Session expired or invalid');
-            }
-
-            const data = await response.json();
-            return data; // Expected to return user object
+            const response = await api.get('/api/auth/me');
+            return response.data;
         } catch (error) {
-            return rejectWithValue(error.message);
+            return rejectWithValue(error.response?.data?.message || 'Session expired or invalid');
         }
     }
 );

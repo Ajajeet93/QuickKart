@@ -1,17 +1,16 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import { logoutUser } from './authSlice';
-import API_URL from '../config';
+import api from '../api';
 
 // Async Thunks
 export const fetchCart = createAsyncThunk(
     'cart/fetchCart',
     async (_, { rejectWithValue }) => {
         try {
-            const res = await fetch(`${API_URL}/api/cart`, { credentials: 'include' });
-            if (!res.ok) throw new Error('Failed to fetch cart');
-            return await res.json();
+            const response = await api.get('/api/cart');
+            return response.data;
         } catch (err) {
-            return rejectWithValue(err.message);
+            return rejectWithValue(err.response?.data?.message || err.message);
         }
     }
 );
@@ -25,20 +24,14 @@ export const addToCartAsync = createAsyncThunk(
                 return { local: true, item }; // Signal to use local logic
             }
 
-            const res = await fetch(`${API_URL}/api/cart/add`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                credentials: 'include',
-                body: JSON.stringify({
-                    productId: item._id,
-                    quantity: item.quantity || 1,
-                    variant: item.variant // Pass variant (weight, price)
-                })
+            const response = await api.post('/api/cart/add', {
+                productId: item._id,
+                quantity: item.quantity || 1,
+                variant: item.variant // Pass variant (weight, price)
             });
-            if (!res.ok) throw new Error('Failed to add to cart');
-            return await res.json(); // Returns backend cart
+            return response.data; // Returns backend cart
         } catch (err) {
-            return rejectWithValue(err.message);
+            return rejectWithValue(err.response?.data?.message || err.message);
         }
     }
 );
@@ -50,16 +43,10 @@ export const updateQuantityAsync = createAsyncThunk(
             const { user } = getState().auth;
             if (!user) return { local: true, id, quantity, weight };
 
-            const res = await fetch(`${API_URL}/api/cart/update`, {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
-                credentials: 'include',
-                body: JSON.stringify({ productId: id, quantity, weight })
-            });
-            if (!res.ok) throw new Error('Failed to update cart');
-            return await res.json();
+            const response = await api.put('/api/cart/update', { productId: id, quantity, weight });
+            return response.data;
         } catch (err) {
-            return rejectWithValue(err.message);
+            return rejectWithValue(err.response?.data?.message || err.message);
         }
     }
 );
@@ -71,14 +58,10 @@ export const removeFromCartAsync = createAsyncThunk(
             const { user } = getState().auth;
             if (!user) return { local: true, id, weight };
 
-            const res = await fetch(`${API_URL}/api/cart/${id}?weight=${weight}`, {
-                method: 'DELETE',
-                credentials: 'include'
-            });
-            if (!res.ok) throw new Error('Failed to remove item');
-            return await res.json();
+            const response = await api.delete(`/api/cart/${id}?weight=${weight}`);
+            return response.data;
         } catch (err) {
-            return rejectWithValue(err.message);
+            return rejectWithValue(err.response?.data?.message || err.message);
         }
     }
 );

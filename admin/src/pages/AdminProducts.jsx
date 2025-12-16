@@ -1,8 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
-import { Plus, Edit2, Trash2, X, Check, Image as ImageIcon, MinusCircle, PlusCircle, Search, Package, Tag } from 'lucide-react';
-import { AnimatePresence, motion } from 'framer-motion';
-import API_URL from '../config';
+import api from '../api';
 
 const AdminProducts = () => {
     const [products, setProducts] = useState([]);
@@ -30,7 +27,7 @@ const AdminProducts = () => {
 
     const fetchProducts = async () => {
         try {
-            const res = await axios.get(`${API_URL}/api/products?limit=1000`);
+            const res = await api.get('/api/products?limit=1000');
             setProducts(res.data.products || []);
             setLoading(false);
         } catch (error) {
@@ -41,7 +38,7 @@ const AdminProducts = () => {
 
     const fetchCategories = async () => {
         try {
-            const res = await axios.get(`${API_URL}/api/categories`);
+            const res = await api.get('/api/categories');
             setCategories(res.data);
         } catch (error) {
             console.error('Error fetching categories:', error);
@@ -70,9 +67,9 @@ const AdminProducts = () => {
             if (!payload.categoryId) delete payload.categoryId;
 
             if (editingProduct) {
-                await axios.put(`${API_URL}/api/products/${editingProduct._id}`, payload, { withCredentials: true });
+                await api.put(`/api/products/${editingProduct._id}`, payload);
             } else {
-                await axios.post(`${API_URL}/api/products`, payload, { withCredentials: true });
+                await api.post('/api/products', payload);
             }
             fetchProducts();
             handleCloseModal();
@@ -85,7 +82,7 @@ const AdminProducts = () => {
     const handleDelete = async (id) => {
         if (window.confirm('Are you sure you want to delete this product?')) {
             try {
-                await axios.delete(`${API_URL}/api/products/${id}`, { withCredentials: true });
+                await api.delete(`/api/products/${id}`);
                 fetchProducts();
             } catch (error) {
                 console.error('Error deleting product:', error);

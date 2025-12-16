@@ -47,6 +47,10 @@ app.use(express.json());
 app.use(cookieParser());
 
 // Session Configuration
+// Check if running in production or on Render
+const isProduction = process.env.NODE_ENV === 'production' || process.env.RENDER === 'true';
+
+// Session Configuration
 app.use(session({
     secret: process.env.SESSION_SECRET || 'your_secret_key',
     resave: false,
@@ -58,13 +62,9 @@ app.use(session({
     }),
     cookie: {
         httpOnly: true,
-        // Secure if in production OR if explicitly defined
-        secure: process.env.NODE_ENV === 'production',
-        maxAge: 1000 * 60 * 60 * 24,
-        // sameSite 'none' is required for cross-site cookie (Render backend <-> Vercel frontend)
-        // If 'none', secure MUST be true.
-        // We enforce this relationship to avoid invalid configurations.
-        sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax'
+        secure: isProduction, // Secure true in production or on Render
+        maxAge: 1000 * 60 * 60 * 24, // 1 day
+        sameSite: isProduction ? 'none' : 'lax' // Cross-site cookie requires 'none'
     }
 }));
 

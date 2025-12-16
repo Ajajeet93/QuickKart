@@ -1,8 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import axios from 'axios';
-import { Users, ShoppingBag, DollarSign, Activity, Package } from 'lucide-react';
-import { format } from 'date-fns';
-import API_URL from '../config';
+import api from '../api';
 
 const StatCard = ({ title, value, icon: Icon, color }) => (
     <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
@@ -31,7 +28,7 @@ const AdminDashboard = () => {
     useEffect(() => {
         const fetchStats = async () => {
             try {
-                const res = await axios.get(`${API_URL}/api/admin/stats`, { withCredentials: true });
+                const res = await api.get('/api/admin/stats');
                 setStats(res.data.stats);
                 setRecentOrders(res.data.recentOrders);
                 setLoading(false);

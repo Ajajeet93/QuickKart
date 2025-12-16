@@ -1,8 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
-import { Trash2, Eye, X, Package, Truck, CheckCircle, Clock, AlertCircle, Calendar, User, MapPin, CreditCard, ChevronDown, Search, TrendingUp } from 'lucide-react';
-import { AnimatePresence, motion } from 'framer-motion';
-import API_URL from '../config';
+import api from '../api';
 
 const AdminOrders = () => {
     const [orders, setOrders] = useState([]);
@@ -16,7 +13,7 @@ const AdminOrders = () => {
 
     const fetchOrders = async () => {
         try {
-            const res = await axios.get(`${API_URL}/api/orders/admin/all`, { withCredentials: true });
+            const res = await api.get('/api/orders/admin/all');
             setOrders(res.data);
             setLoading(false);
         } catch (error) {
@@ -27,7 +24,7 @@ const AdminOrders = () => {
 
     const handleStatusChange = async (id, newStatus) => {
         try {
-            await axios.put(`${API_URL}/api/orders/admin/${id}/status`, { status: newStatus }, { withCredentials: true });
+            await api.put(`/api/orders/admin/${id}/status`, { status: newStatus });
             fetchOrders();
         } catch (error) {
             console.error('Error updating status:', error);
@@ -38,7 +35,7 @@ const AdminOrders = () => {
     const handleDelete = async (id) => {
         if (window.confirm('Are you sure you want to delete this order?')) {
             try {
-                await axios.delete(`${API_URL}/api/orders/admin/${id}`, { withCredentials: true });
+                await api.delete(`/api/orders/admin/${id}`);
                 fetchOrders();
             } catch (error) {
                 console.error('Error deleting order:', error);

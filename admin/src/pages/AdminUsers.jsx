@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import api from '../api';
 import { Trash2, UserPlus, X, Save } from 'lucide-react';
-import API_URL from '../config';
 
 const AdminUsers = () => {
     const [users, setUsers] = useState([]);
@@ -21,7 +20,7 @@ const AdminUsers = () => {
 
     const fetchUsers = async () => {
         try {
-            const res = await axios.get(`${API_URL}/api/user/all`, { withCredentials: true });
+            const res = await api.get('/api/user/all');
             setUsers(res.data);
             setLoading(false);
         } catch (error) {
@@ -33,7 +32,7 @@ const AdminUsers = () => {
     const handleDelete = async (id) => {
         if (window.confirm('Are you sure you want to delete this user? This action cannot be undone.')) {
             try {
-                await axios.delete(`${API_URL}/api/user/${id}`, { withCredentials: true });
+                await api.delete(`/api/user/${id}`);
                 fetchUsers();
             } catch (error) {
                 console.error('Error deleting user:', error);
@@ -45,7 +44,7 @@ const AdminUsers = () => {
     const handleCreateUser = async (e) => {
         e.preventDefault();
         try {
-            await axios.post(`${API_URL}/api/user/create`, formData, { withCredentials: true });
+            await api.post('/api/user/create', formData);
             setShowModal(false);
             setFormData({ name: '', email: '', password: '', role: 'user', phone: '' });
             fetchUsers();

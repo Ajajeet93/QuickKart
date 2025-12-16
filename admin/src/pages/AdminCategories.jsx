@@ -1,7 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
-import { Plus, Edit2, Trash2, X, Check } from 'lucide-react';
-import API_URL from '../config';
+import api from '../api';
 
 const AdminCategories = () => {
     const [categories, setCategories] = useState([]);
@@ -16,7 +14,7 @@ const AdminCategories = () => {
 
     const fetchCategories = async () => {
         try {
-            const res = await axios.get(`${API_URL}/api/categories`);
+            const res = await api.get('/api/categories');
             setCategories(res.data);
             setLoading(false);
         } catch (error) {
@@ -29,9 +27,9 @@ const AdminCategories = () => {
         e.preventDefault();
         try {
             if (editingCategory) {
-                await axios.put(`${API_URL}/api/categories/${editingCategory._id}`, formData, { withCredentials: true });
+                await api.put(`/api/categories/${editingCategory._id}`, formData);
             } else {
-                await axios.post(`${API_URL}/api/categories`, formData, { withCredentials: true });
+                await api.post('/api/categories', formData);
             }
             fetchCategories();
             handleCloseModal();
@@ -44,7 +42,7 @@ const AdminCategories = () => {
     const handleDelete = async (id) => {
         if (window.confirm('Are you sure you want to delete this category?')) {
             try {
-                await axios.delete(`${API_URL}/api/categories/${id}`, { withCredentials: true });
+                await api.delete(`/api/categories/${id}`);
                 fetchCategories();
             } catch (error) {
                 console.error('Error deleting category:', error);

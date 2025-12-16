@@ -1,7 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
-import { CheckCircle, XCircle, AlertCircle, Clock, Eye, Package, User, FileText, Send } from 'lucide-react';
-import API_URL from '../config';
+import api from '../api';
 
 const AdminSupport = () => {
     const [requests, setRequests] = useState([]);
@@ -16,7 +14,7 @@ const AdminSupport = () => {
 
     const fetchRequests = async () => {
         try {
-            const res = await axios.get(`${API_URL}/api/support/admin/all`, { withCredentials: true });
+            const res = await api.get('/api/support/admin/all');
             setRequests(res.data);
             setLoading(false);
         } catch (error) {
@@ -28,10 +26,10 @@ const AdminSupport = () => {
     const handleStatusUpdate = async (id, status) => {
         setProcessingId(id);
         try {
-            await axios.put(`${API_URL}/api/support/admin/${id}/status`, {
+            await api.put(`/api/support/admin/${id}/status`, {
                 status,
                 adminResponse: adminNote || (status === 'Approved' ? 'Your request has been approved.' : 'Your request has been rejected.')
-            }, { withCredentials: true });
+            });
 
             // Close modal if open
             if (selectedRequest && selectedRequest._id === id) {

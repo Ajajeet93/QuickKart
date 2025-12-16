@@ -105,7 +105,9 @@ const CreateSubscription = () => {
             // Refresh user for wallet balance update
             dispatch(loadUser());
 
-            navigate('/subscriptions');
+            // Navigate to success page with the first subscription ID
+            const subId = data.subscriptions && data.subscriptions.length > 0 ? data.subscriptions[0]._id : 'new';
+            navigate(`/payment-success?type=subscription&orderId=${subId}`);
         } catch (err) {
             setError(err.message);
             setSubmitting(false);
@@ -346,7 +348,7 @@ const CreateSubscription = () => {
                 <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
                     <div className="bg-white rounded-3xl p-8 max-w-md w-full shadow-2xl transform transition-all scale-100 animate-in fade-in zoom-in duration-200">
                         <div className="flex justify-between items-start mb-6">
-                            <div className="bg-amber-100 p-3 rounded-full text-amber-600">
+                            <div className="bg-red-100 p-3 rounded-full text-red-600">
                                 <AlertCircle size={32} />
                             </div>
                             <button

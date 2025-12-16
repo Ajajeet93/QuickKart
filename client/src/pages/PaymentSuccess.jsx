@@ -34,8 +34,10 @@ const PaymentSuccess = () => {
                 </p>
 
                 <div className="bg-gray-50 p-4 rounded-xl mb-8 flex items-center justify-between border border-gray-200">
-                    <span className="text-gray-600 font-medium">Order ID:</span>
-                    <span className="font-bold text-gray-900">{orderId || 'ORD-12345-XYZ'}</span>
+                    <span className="text-gray-600 font-medium">
+                        {isSubscription ? 'Subscription ID:' : 'Order ID:'}
+                    </span>
+                    <span className="font-bold text-gray-900">{orderId || 'N/A'}</span>
                 </div>
 
                 <div className="space-y-4">

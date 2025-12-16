@@ -1,5 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import api from '../api';
+import {
+    Search, Plus, Edit2, Trash2, X, Tag, Check, Image as ImageIcon,
+    Filter, ChevronDown
+} from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 
 const AdminProducts = () => {
     const [products, setProducts] = useState([]);

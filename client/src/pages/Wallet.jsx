@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Wallet as WalletIcon, Plus, History, ArrowUpRight, ArrowDownLeft, AlertCircle } from 'lucide-react';
+import toast from 'react-hot-toast';
+import ConfirmDialog from '../components/ConfirmDialog';
 import API_URL from '../config';
 
 import { useDispatch } from 'react-redux';
@@ -22,6 +24,9 @@ const Wallet = () => {
         cvc: '',
         name: ''
     });
+
+    const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+    const [selectedCardId, setSelectedCardId] = useState(null);
 
     const fetchWalletData = async () => {
         try {
@@ -80,7 +85,7 @@ const Wallet = () => {
             fetchWalletData();
             // Refresh user data globally to update Navbar balance
             dispatch(loadUser());
-            alert('Money added successfully!');
+            toast.success('Money added successfully!');
         } catch (err) {
             setError(err.message || 'Failed to add money');
         } finally {
@@ -121,28 +126,38 @@ const Wallet = () => {
                 setShowCardForm(false);
                 setCardForm({ number: '', expiry: '', cvc: '', name: '' });
                 fetchWalletData();
-                alert('Card saved successfully!');
+                toast.success('Card saved successfully!');
             } else {
                 const d = await res.json();
-                alert(d.message);
+                toast.error(d.message);
             }
         } catch (err) {
-            alert(err.message);
+            toast.error(err.message);
         } finally {
             setLoading(false);
         }
     };
 
-    const handleDeleteCard = async (id) => {
-        if (!window.confirm('Remove this card?')) return;
+    const initiateDeleteCard = (id) => {
+        setSelectedCardId(id);
+        setShowDeleteConfirm(true);
+    };
+
+    const confirmDeleteCard = async () => {
+        if (!selectedCardId) return;
+
         try {
-            await fetch(`${API_URL}/api/wallet/cards/${id}`, {
+            await fetch(`${API_URL}/api/wallet/cards/${selectedCardId}`, {
                 method: 'DELETE',
                 credentials: 'include'
             });
             fetchWalletData();
+            toast.success('Card removed successfully');
+            setShowDeleteConfirm(false);
+            setSelectedCardId(null);
         } catch (err) {
             console.error(err);
+            toast.error('Failed to remove card');
         }
     };
 
@@ -240,7 +255,7 @@ const Wallet = () => {
                                                         <p className="text-xs text-gray-500">Expires {card.expMonth}/{card.expYear}</p>
                                                     </div>
                                                 </div>
-                                                <button onClick={() => handleDeleteCard(card._id)} className="text-gray-400 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                <button onClick={() => initiateDeleteCard(card._id)} className="text-gray-400 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity">
                                                     Remove
                                                 </button>
                                             </div>
@@ -336,6 +351,17 @@ const Wallet = () => {
                     </div>
                 </div>
             </div>
+
+            <ConfirmDialog
+                isOpen={showDeleteConfirm}
+                title="Remove Card"
+                message="Are you sure you want to remove this saved card?"
+                confirmText="Remove"
+                cancelText="Cancel"
+                isDestructive={true}
+                onConfirm={confirmDeleteCard}
+                onCancel={() => setShowDeleteConfirm(false)}
+            />
         </div>
     );
 };

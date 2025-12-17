@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import API_URL from '../config';
 import { Package, MapPin, Calendar, CreditCard, ArrowLeft, AlertCircle, Clock, Wallet, Receipt, ChevronRight, Hash, User, XCircle, CheckSquare, Square, ChevronDown } from 'lucide-react';
+import toast from 'react-hot-toast';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useSelector } from 'react-redux';
 import LoadingSpinner from '../components/LoadingSpinner';
@@ -115,7 +116,7 @@ const OrderDetails = () => {
             });
 
             if (res.ok) {
-                alert('Request submitted successfully!');
+                toast.success('Request submitted successfully!');
                 setShowReportModal(false);
                 // Refresh requests
                 const reqRes = await fetch(`${API_URL}/api/support/order/${id}`, { credentials: 'include' });
@@ -125,11 +126,11 @@ const OrderDetails = () => {
                 }
             } else {
                 const errData = await res.json();
-                alert(`Failed: ${errData.message || 'Unknown error'}`);
+                toast.error(`Failed: ${errData.message || 'Unknown error'}`);
             }
         } catch (error) {
             console.error('Error submitting report:', error);
-            alert('Error submitting request');
+            toast.error('Error submitting request');
         } finally {
             setIsSubmitting(false);
         }

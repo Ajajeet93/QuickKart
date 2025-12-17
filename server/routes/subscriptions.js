@@ -80,9 +80,10 @@ router.post('/', isAuthenticated, async (req, res) => {
         // Calculate total first to verify wallet balance
         for (const { item, product } of processedItems) {
             // Use variant price if available, else product price
-            const price = item.variant ? item.variant.price : product.price;
+            let price = item.variant && item.variant.price ? item.variant.price : product.price;
+            price = Number(price) || 0;
             const discountedPrice = price * 0.85;
-            calculatedTotal += discountedPrice * item.quantity;
+            calculatedTotal += discountedPrice * (Number(item.quantity) || 1);
         }
 
         // Check for Future Start Date using String Comparison
@@ -107,7 +108,8 @@ router.post('/', isAuthenticated, async (req, res) => {
         const paymentMethodId = await tokenizePaymentMethod();
 
         for (const { item, product, existingSubscription } of processedItems) {
-            const price = item.variant ? item.variant.price : product.price;
+            let price = item.variant && item.variant.price ? item.variant.price : product.price;
+            price = Number(price) || 0;
             const discountedPrice = price * 0.85;
 
             orderItems.push({

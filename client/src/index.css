@@ -1,7 +1,6 @@
 @import "tailwindcss";
 
 @plugin "tailwindcss-animate";
-@import "tw-animate-css";
 
 @custom-variant dark (&:is(.dark *));
 
@@ -149,5 +148,22 @@ body {
 
   body {
     @apply bg-background text-foreground;
+  }
+
+  /* Global Interactive Feedback */
+  button,
+  a {
+    @apply cursor-pointer transition-all duration-200 ease-in-out;
+  }
+
+  /* Tactile button feel */
+  button:active {
+    @apply scale-[0.98];
+  }
+
+  /* Focus rings for accessibility */
+  button:focus-visible,
+  a:focus-visible {
+    @apply outline-none ring-2 ring-primary ring-offset-2;
   }
 }

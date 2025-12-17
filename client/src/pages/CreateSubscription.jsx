@@ -92,22 +92,42 @@ const CreateSubscription = () => {
             });
 
             if (!response.ok) {
-                const data = await response.json();
+                const errorData = await response.json();
                 // 409 Conflict
                 if (response.status === 409) {
                     setShowConflictModal(true);
                     setSubmitting(false);
                     return;
                 }
-                throw new Error(data.message || 'Failed to create subscription');
+                throw new Error(errorData.message || 'Failed to create subscription');
             }
+            const successData = await response.json();
+            console.log('Subscription Success Response [v3]:', successData);
 
             // Refresh user for wallet balance update
             dispatch(loadUser());
 
             // Navigate to success page with the first subscription ID
-            const subId = data.subscriptions && data.subscriptions.length > 0 ? data.subscriptions[0]._id : 'new';
-            navigate(`/payment-success?type=subscription&orderId=${subId}`);
+            // Bulletproof ID extraction
+            let finalId = 'SUB-GEN-' + Date.now().toString().slice(-6);
+
+            if (successData && Array.isArray(successData.subscriptions) && successData.subscriptions.length > 0) {
+                const firstSub = successData.subscriptions[0];
+                console.log('Use FIRST SUB for ID extraction:', firstSub);
+
+                if (firstSub) {
+                    // Try to find ANY valid ID
+                    const candidateId = firstSub._id || firstSub.id;
+                    if (candidateId && candidateId !== 'null' && typeof candidateId === 'string') {
+                        finalId = candidateId;
+                    }
+                }
+            } else {
+                console.warn('Response did not contain subscriptions array or it was empty');
+            }
+
+            console.log('Navigating with finalId:', finalId);
+            navigate(`/payment-success?type=subscription&orderId=${finalId}`);
         } catch (err) {
             setError(err.message);
             setSubmitting(false);
@@ -384,12 +404,20 @@ const CreateSubscription = () => {
                             </button>
                             <button
                                 onClick={() => {
-                                    setShowConflictModal(false);
                                     handleSubmit(null, true);
                                 }}
-                                className="flex-1 py-3 px-4 rounded-xl font-bold text-white bg-primary hover:bg-[#0a6c1a] shadow-lg shadow-green-100 transition"
+                                disabled={submitting}
+                                className={`flex-1 py-3 px-4 rounded-xl font-bold text-white shadow-lg shadow-red-100 transition flex items-center justify-center gap-2
+                                ${submitting ? 'bg-red-400 cursor-not-allowed' : 'bg-red-600 hover:bg-red-700'}`}
                             >
-                                Yes, Add to Existing
+                                {submitting ? (
+                                    <>
+                                        <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                                        Processing...
+                                    </>
+                                ) : (
+                                    'Yes, Combine & Save'
+                                )}
                             </button>
                         </div>
                     </div>

@@ -5,6 +5,7 @@ import {
     User, Mail, Phone, Package, LogOut, MapPin,
     CreditCard, Calendar, ChevronRight, Wallet, ShoppingBag, AlertCircle
 } from 'lucide-react';
+import toast from 'react-hot-toast';
 import { useSelector, useDispatch } from 'react-redux';
 import { logoutUser, loadUser } from '../store/authSlice';
 import LoadingSpinner from '../components/LoadingSpinner';
@@ -45,13 +46,13 @@ const Profile = () => {
                 // This ensures we are showing exactly what is in the DB
                 await fetchUserData();
 
-                alert('Profile updated successfully!');
+                toast.success('Profile updated successfully!');
             } else {
-                alert(data.message || 'Failed to update profile');
+                toast.error(data.message || 'Failed to update profile');
             }
         } catch (err) {
             console.error(err);
-            alert(`Error: ${err.message}`);
+            toast.error(`Error: ${err.message}`);
         } finally {
             setUpdateLoading(false);
         }

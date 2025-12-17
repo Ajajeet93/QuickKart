@@ -1,11 +1,12 @@
 import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
-import { addToCartAsync } from "../store/cartSlice";
+import { addToCartAsync, updateQuantityAsync, removeFromCartAsync } from "../store/cartSlice";
 import { fetchProductById, fetchProducts } from "../store/productSlice";
 import { Truck, ShieldCheck, CheckCircle2, Minus, Plus, ArrowLeft } from "lucide-react";
 import { motion } from "framer-motion";
 import LoadingSpinner from '../components/LoadingSpinner';
+import toast from 'react-hot-toast';
 
 const ProductDetails = () => {
     const { id } = useParams();
@@ -14,6 +15,7 @@ const ProductDetails = () => {
 
     const { selectedProduct, items: similarProductsList, loading, error } =
         useSelector((state) => state.products);
+    const { items } = useSelector((state) => state.cart);
 
     const [quantity, setQuantity] = useState(1);
     const [selectedImage, setSelectedImage] = useState(null);
@@ -70,7 +72,20 @@ const ProductDetails = () => {
                 variant: selectedVariant || null,
                 price: selectedVariant ? selectedVariant.price : selectedProduct.price,
                 quantity
-            }));
+            })).then(() => {
+                toast.success(`Added ${quantity}x ${selectedProduct.name} to cart`, {
+                    style: {
+                        border: '1px solid #0C831F',
+                        padding: '16px',
+                        color: '#0C831F',
+                        background: '#F0FDF4',
+                    },
+                    iconTheme: {
+                        primary: '#0C831F',
+                        secondary: '#FFFAEE',
+                    },
+                });
+            });
         }
     };
 
@@ -291,41 +306,84 @@ const ProductDetails = () => {
                         </div>
                     )}
 
-                    {/* Add to Cart + Quantity */}
-                    <div className="flex gap-4 items-center w-full max-w-lg">
 
-                        <button
-                            onClick={handleAddToCart}
-                            className="flex-1 py-4 bg-primary text-white rounded-full font-bold text-lg flex justify-center items-center gap-3 hover:bg-[#0a6c1a] transition-all shadow-xl shadow-green-100 active:scale-[0.98]"
-                        >
-                            <Truck size={20} />
-                            {purchaseType === "subscription"
-                                ? "Subscribe Now"
-                                : "Add to Cart"}{" "}
-                            — ₹
-                            {(purchaseType === "subscription" ? subPrice : currentPrice) *
-                                quantity}
-                        </button>
-
-                        {/* Quantity */}
-                        <div className="flex items-center gap-1 bg-gray-50 p-1 rounded-full border border-gray-200 h-14">
+                    {/* Dynamic Cart Control */}
+                    {purchaseType === 'subscription' ? (
+                        <div className="w-full">
                             <button
-                                onClick={() => handleQuantityChange(-1)}
-                                className="w-12 h-12 flex items-center justify-center rounded-full bg-white shadow-sm text-gray-700 hover:text-primary hover:scale-110 transition"
+                                onClick={handleAddToCart}
+                                className="w-full py-4 bg-primary text-white rounded-full font-bold text-lg flex justify-center items-center gap-3 hover:bg-[#0a6c1a] transition-all shadow-xl shadow-green-100 active:scale-[0.98]"
                             >
-                                <Minus size={16} />
-                            </button>
-                            <span className="font-bold text-gray-900 text-lg w-10 text-center">
-                                {quantity}
-                            </span>
-                            <button
-                                onClick={() => handleQuantityChange(1)}
-                                className="w-12 h-12 flex items-center justify-center rounded-full bg-white shadow-sm text-gray-700 hover:text-primary hover:scale-110 transition"
-                            >
-                                <Plus size={16} />
+                                <Truck size={20} />
+                                Subscribe Now — ₹{(subPrice * quantity).toFixed(2)}
                             </button>
                         </div>
-                    </div>
+                    ) : (
+                        <div className="flex gap-4 items-center w-full max-w-lg">
+                            {/* Check if item is in cart */}
+                            {items.find(item => item._id === selectedProduct._id && item.variant?.weight === selectedVariant?.weight) ? (
+                                <div className="flex-1 py-3 bg-green-50 border border-green-200 text-green-800 rounded-full font-bold text-lg flex justify-between items-center px-6 shadow-sm">
+                                    <button
+                                        onClick={() => {
+                                            const item = items.find(i => i._id === selectedProduct._id && i.variant?.weight === selectedVariant?.weight);
+                                            if (item.quantity > 1) {
+                                                dispatch(updateQuantityAsync({ id: item._id, quantity: item.quantity - 1, weight: item.variant?.weight }));
+                                            } else {
+                                                dispatch(removeFromCartAsync({ id: item._id, weight: item.variant?.weight }));
+                                            }
+                                        }}
+                                        className="w-10 h-10 rounded-full bg-white flex items-center justify-center shadow-sm hover:scale-110 transition text-green-700"
+                                    >
+                                        <Minus size={20} />
+                                    </button>
+
+                                    <span className="flex flex-col items-center leading-tight">
+                                        <span className="text-xs font-medium uppercase tracking-wider opacity-70">In Cart</span>
+                                        <span className="text-2xl font-black">{items.find(item => item._id === selectedProduct._id && item.variant?.weight === selectedVariant?.weight).quantity}</span>
+                                    </span>
+
+                                    <button
+                                        onClick={() => {
+                                            const item = items.find(i => i._id === selectedProduct._id && i.variant?.weight === selectedVariant?.weight);
+                                            dispatch(addToCartAsync({ ...selectedProduct, variant: selectedVariant, price: selectedVariant?.price || selectedProduct.price, quantity: 1 }));
+                                        }}
+                                        className="w-10 h-10 rounded-full bg-white flex items-center justify-center shadow-sm hover:scale-110 transition text-green-700"
+                                    >
+                                        <Plus size={20} />
+                                    </button>
+                                </div>
+                            ) : (
+                                <button
+                                    onClick={handleAddToCart}
+                                    className="flex-1 py-4 bg-primary text-white rounded-full font-bold text-lg flex justify-center items-center gap-3 hover:bg-[#0a6c1a] transition-all shadow-xl shadow-green-100 active:scale-[0.98]"
+                                >
+                                    <Truck size={20} />
+                                    Add to Cart — ₹{(currentPrice * quantity).toFixed(0)}
+                                </button>
+                            )}
+
+                            {/* Local Quantity Selector (Only shown if NOT in cart) */}
+                            {!items.find(item => item._id === selectedProduct._id && item.variant?.weight === selectedVariant?.weight) && (
+                                <div className="flex items-center gap-1 bg-gray-50 p-1 rounded-full border border-gray-200 h-14">
+                                    <button
+                                        onClick={() => handleQuantityChange(-1)}
+                                        className="w-12 h-12 flex items-center justify-center rounded-full bg-white shadow-sm text-gray-700 hover:text-primary hover:scale-110 transition"
+                                    >
+                                        <Minus size={16} />
+                                    </button>
+                                    <span className="font-bold text-gray-900 text-lg w-10 text-center">
+                                        {quantity}
+                                    </span>
+                                    <button
+                                        onClick={() => handleQuantityChange(1)}
+                                        className="w-12 h-12 flex items-center justify-center rounded-full bg-white shadow-sm text-gray-700 hover:text-primary hover:scale-110 transition"
+                                    >
+                                        <Plus size={16} />
+                                    </button>
+                                </div>
+                            )}
+                        </div>
+                    )}
 
                     {/* Trust Row */}
                     <div className="flex gap-6 text-gray-500 text-sm font-medium pt-4 border-t border-gray-100 mt-2">

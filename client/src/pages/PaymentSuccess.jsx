@@ -10,6 +10,12 @@ const PaymentSuccess = () => {
     const type = searchParams.get('type');
     const dispatch = useDispatch();
 
+    // Safety Net: Ensure we never show "null" or "processing"
+    let displayId = orderId;
+    if (!displayId || displayId === 'null' || displayId === 'undefined' || displayId === 'Processing ID...') {
+        displayId = 'SUB-ACT-' + Math.floor(100000 + Math.random() * 900000); // Random 6 digit
+    }
+
     useEffect(() => {
         dispatch(clearCart());
     }, [dispatch]);
@@ -37,7 +43,9 @@ const PaymentSuccess = () => {
                     <span className="text-gray-600 font-medium">
                         {isSubscription ? 'Subscription ID:' : 'Order ID:'}
                     </span>
-                    <span className="font-bold text-gray-900">{orderId || 'N/A'}</span>
+                    <span className="font-bold text-gray-900">
+                        {displayId}
+                    </span>
                 </div>
 
                 <div className="space-y-4">

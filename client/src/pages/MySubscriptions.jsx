@@ -9,6 +9,7 @@ import {
     MenubarTrigger,
 } from "@/components/ui/menubar";
 import LoadingSpinner from '../components/LoadingSpinner';
+import ConfirmDialog from '../components/ConfirmDialog';
 
 const MySubscriptions = () => {
     const [subscriptions, setSubscriptions] = useState([]);
@@ -47,14 +48,25 @@ const MySubscriptions = () => {
         }
     };
 
-    const handleDelete = async (id) => {
-        if (!window.confirm('Are you sure you want to cancel this subscription?')) return;
+    const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+    const [selectedSubId, setSelectedSubId] = useState(null);
+
+    const initiateDelete = (id) => {
+        setSelectedSubId(id);
+        setShowDeleteConfirm(true);
+    };
+
+    const confirmDelete = async () => {
+        if (!selectedSubId) return;
+
         try {
-            await fetch(`${API_URL}/api/subscriptions/${id}`, {
+            await fetch(`${API_URL}/api/subscriptions/${selectedSubId}`, {
                 method: 'DELETE',
                 credentials: 'include'
             });
-            setSubscriptions(prev => prev.filter(sub => sub._id !== id));
+            setSubscriptions(prev => prev.filter(sub => sub._id !== selectedSubId));
+            setShowDeleteConfirm(false);
+            setSelectedSubId(null);
         } catch (err) {
             console.error('Failed to delete subscription', err);
         }
@@ -199,7 +211,7 @@ const MySubscriptions = () => {
                                             <Pencil size={18} />
                                         </Link>
                                         <button
-                                            onClick={() => handleDelete(sub._id)}
+                                            onClick={() => initiateDelete(sub._id)}
                                             className="w-9 h-9 flex items-center justify-center rounded-full border border-gray-200 text-gray-500 hover:text-red-600 hover:border-red-200 hover:bg-red-50 transition-all"
                                             title="Cancel Subscription"
                                         >
@@ -211,6 +223,17 @@ const MySubscriptions = () => {
                         ))}
                     </div>
                 )}
+
+                <ConfirmDialog
+                    isOpen={showDeleteConfirm}
+                    title="Cancel Subscription"
+                    message="Are you sure you want to cancel this subscription? You won't be billed for future deliveries."
+                    confirmText="Yes, Cancel Subscription"
+                    cancelText="Keep Subscription"
+                    isDestructive={true}
+                    onConfirm={confirmDelete}
+                    onCancel={() => setShowDeleteConfirm(false)}
+                />
             </div>
         </div>
     );

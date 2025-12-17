@@ -4,6 +4,7 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { useDispatch, useSelector } from 'react-redux';
 import { addToCartAsync, updateQuantityAsync, removeFromCartAsync } from '../store/cartSlice';
 import { useNavigate } from 'react-router-dom';
+import toast from 'react-hot-toast';
 
 const ProductCard = ({ product }) => {
     const dispatch = useDispatch();
@@ -39,7 +40,20 @@ const ProductCard = ({ product }) => {
             variant: selectedVariant || null,
             price: selectedVariant ? selectedVariant.price : product.price,
             quantity: 1
-        }));
+        })).then(() => {
+            toast.success(`Added ${product.name} to cart`, {
+                style: {
+                    border: '1px solid #0C831F',
+                    padding: '16px',
+                    color: '#0C831F',
+                    background: '#F0FDF4',
+                },
+                iconTheme: {
+                    primary: '#0C831F',
+                    secondary: '#FFFAEE',
+                },
+            });
+        });
     };
 
     const handleIncrement = (e) => {

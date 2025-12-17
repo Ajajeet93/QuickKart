@@ -9,6 +9,7 @@ import { loadUser } from './store/authSlice';
 import { fetchAddresses } from './store/addressSlice';
 import { fetchCart } from './store/cartSlice';
 import { useEffect } from 'react';
+import { Toaster } from 'react-hot-toast';
 
 function App() {
   const dispatch = useDispatch();
@@ -39,6 +40,35 @@ function App() {
         <Suspense fallback={<LoadingSpinner />}>
           <AnimatedRoutes />
         </Suspense>
+
+        <Toaster position="top-center" toastOptions={{
+          duration: 3000,
+          style: {
+            background: '#333',
+            color: '#fff',
+            borderRadius: '12px',
+            padding: '12px 20px',
+            fontSize: '14px',
+          },
+          success: {
+            style: {
+              background: '#EBF7EE',
+              color: '#0C831F',
+              border: '1px solid #0C831F'
+            },
+            iconTheme: {
+              primary: '#0C831F',
+              secondary: '#fff',
+            },
+          },
+          error: {
+            style: {
+              background: '#FEF2F2',
+              color: '#DC2626',
+              border: '1px solid #DC2626'
+            }
+          }
+        }} />
 
       </div>
     </Router>

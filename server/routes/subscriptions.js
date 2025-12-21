@@ -5,6 +5,7 @@ const Order = require('../models/Order');
 const Payment = require('../models/Payment');
 const User = require('../models/User');
 const Transaction = require('../models/Transaction');
+const Address = require('../models/Address');
 
 
 const Cart = require('../models/Cart');
@@ -185,11 +186,29 @@ router.get('/', isAuthenticated, async (req, res) => {
 router.get('/:id', isAuthenticated, async (req, res) => {
     try {
         const subscription = await Subscription.findOne({ _id: req.params.id, userId: req.user.id })
-            .populate('items.product');
+            .populate('items.product')
+            .populate('deliveryAddress');
 
         if (!subscription) return res.status(404).json({ message: 'Subscription not found' });
 
-        res.json(subscription);
+        // Fetch Delivery History (Orders linked to this subscription)
+        const history = await Order.find({
+            userId: req.user.id,
+            subscriptionIds: req.params.id
+        })
+            .sort({ createdAt: -1 })
+            .limit(10)
+            .select('createdAt totalAmount status items');
+
+        // Fetch User Addresses (Fallback for legacy subscriptions)
+        const addresses = await Address.find({ userId: req.user.id });
+
+        const subObj = subscription.toObject();
+        subObj.history = history;
+        subObj.addressList = addresses;
+
+        res.set('Cache-Control', 'no-store');
+        res.json(subObj);
     } catch (err) {
         res.status(500).json({ message: err.message });
     }

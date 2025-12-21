@@ -20,7 +20,7 @@ const subscriptionSchema = new mongoose.Schema({
         enum: ['Active', 'Paused', 'Cancelled', 'Pending'],
         default: 'Pending'
     },
-    deliveryAddress: { type: String, required: true }, // Relaxed from ObjectId for demo
+    deliveryAddress: { type: mongoose.Schema.Types.ObjectId, ref: 'Address', required: true },
     nextDeliveryDate: { type: Date },
     lastDeliveryDate: { type: Date },
     paymentMethodId: { type: String } // Stripe PaymentMethod ID

@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import api from '../api';
 import {
     Search, Plus, Edit2, Trash2, X, Tag, Check, Image as ImageIcon,
-    Filter, ChevronDown
+    Filter, ChevronDown, Package
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -53,6 +53,11 @@ const AdminProducts = () => {
     const handleSubmit = async (e) => {
         e.preventDefault();
         try {
+            if (!formData.categoryId) {
+                alert('Please select a category');
+                return;
+            }
+
             const selectedCategory = categories.find(c => c._id === formData.categoryId);
 
             // Process images from textarea
@@ -61,26 +66,33 @@ const AdminProducts = () => {
                 .map(url => url.trim())
                 .filter(url => url !== '');
 
+            // Ensure price and stock are numbers
             const payload = {
                 ...formData,
+                price: parseFloat(formData.price),
+                stock: parseInt(formData.stock),
                 category: selectedCategory ? selectedCategory.name : 'Uncategorized',
                 images: processedImages,
-                variants: formData.variants.filter(v => v.weight && v.price) // Filter incomplete variants
+                variants: formData.variants
+                    .filter(v => v.weight && v.price)
+                    .map(v => ({ ...v, price: parseFloat(v.price) })) // Ensure variant price is number
             };
 
-            // Fix conflict with ObjectId casting if empty string
-            if (!payload.categoryId) delete payload.categoryId;
+            console.log('Sending Product Payload:', payload);
 
             if (editingProduct) {
                 await api.put(`/api/products/${editingProduct._id}`, payload);
             } else {
                 await api.post('/api/products', payload);
             }
+
             fetchProducts();
             handleCloseModal();
+            alert(editingProduct ? 'Product updated successfully' : 'Product created successfully');
         } catch (error) {
             console.error('Error saving product:', error);
-            alert('Failed to save product');
+            const errorMsg = error.response?.data?.message || error.message || 'Failed to save product';
+            alert(`Error: ${errorMsg}`);
         }
     };
 

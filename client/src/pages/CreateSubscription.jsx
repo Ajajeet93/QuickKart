@@ -6,6 +6,7 @@ import { Calendar, CreditCard, MapPin, Package, Check, AlertCircle, Wallet as Wa
 import { useSelector, useDispatch } from 'react-redux';
 import { fetchProductById } from '../store/productSlice';
 import { loadUser } from '../store/authSlice';
+import { fetchAddresses } from '../store/addressSlice';
 import CustomCalendar from '../components/CustomCalendar';
 
 const CreateSubscription = () => {
@@ -29,6 +30,7 @@ const CreateSubscription = () => {
     const [submitting, setSubmitting] = useState(false);
     const [error, setError] = useState('');
     const [showConflictModal, setShowConflictModal] = useState(false);
+    const [showAddressModal, setShowAddressModal] = useState(false);
     const [selectedVariant, setSelectedVariant] = useState(null);
 
     useEffect(() => {
@@ -39,7 +41,12 @@ const CreateSubscription = () => {
             }
         }
 
-        // 2. Auto-select first/default address
+        // 2. Ensure addresses are loaded
+        if (addresses.length === 0) {
+            dispatch(fetchAddresses());
+        }
+
+        // 3. Auto-select first/default address (Pre-select for modal)
         if (addresses.length > 0 && !selectedAddress) {
             const defaultAddr = addresses.find(a => a.isDefault) || addresses[0];
             setSelectedAddress(defaultAddr._id);
@@ -57,8 +64,15 @@ const CreateSubscription = () => {
         }
     }, [selectedProduct, weightParam]);
 
-    const handleSubmit = async (e, forceMerge = false) => {
+    const handleSubmit = async (e, forceMerge = false, confirmedAddress = false) => {
         if (e) e.preventDefault();
+
+        // Step 1: Trigger Address Modal
+        if (!confirmedAddress && !forceMerge) {
+            setShowAddressModal(true);
+            return;
+        }
+
         setSubmitting(true);
         setError('');
 
@@ -362,6 +376,71 @@ const CreateSubscription = () => {
 
                 </div>
             </div>
+
+            {/* Address Selection Modal */}
+            {showAddressModal && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+                    <div className="bg-white rounded-3xl p-6 max-w-lg w-full shadow-2xl transform transition-all scale-100 animate-in fade-in zoom-in duration-200">
+                        <div className="flex justify-between items-center mb-6 border-b border-gray-100 pb-4">
+                            <h3 className="text-xl font-bold text-gray-900 flex items-center gap-2">
+                                <MapPin className="text-primary" size={24} /> Select Delivery Address
+                            </h3>
+                            <button
+                                onClick={() => setShowAddressModal(false)}
+                                className="text-gray-400 hover:text-gray-600 p-1 hover:bg-gray-100 rounded-full transition"
+                            >
+                                <X size={24} />
+                            </button>
+                        </div>
+
+                        <div className="max-h-[60vh] overflow-y-auto pr-2 space-y-3 mb-6 custom-scrollbar">
+                            {addresses.length === 0 ? (
+                                <div className="text-center py-8">
+                                    <p className="text-gray-500 mb-4">No addresses saved.</p>
+                                    <Link to="/profile" className="px-4 py-2 bg-primary text-white rounded-lg font-bold text-sm">Add New Address</Link>
+                                </div>
+                            ) : (
+                                addresses.map(addr => (
+                                    <label
+                                        key={addr._id}
+                                        className={`w-full p-4 rounded-xl border flex items-start gap-4 cursor-pointer transition-all ${selectedAddress === addr._id ? 'border-primary bg-green-50 ring-1 ring-primary' : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'}`}
+                                    >
+                                        <div className="mt-1">
+                                            <input
+                                                type="radio"
+                                                name="modalDeliveryAddress"
+                                                value={addr._id}
+                                                checked={selectedAddress === addr._id}
+                                                onChange={() => setSelectedAddress(addr._id)}
+                                                className="w-5 h-5 text-primary focus:ring-primary border-gray-300"
+                                            />
+                                        </div>
+                                        <div className="flex-1">
+                                            <div className="flex items-center gap-2 mb-1">
+                                                <span className="font-bold text-gray-900">{addr.street}</span>
+                                                {addr.type && <span className="text-[10px] uppercase font-bold bg-white border border-gray-200 text-gray-500 px-2 py-0.5 rounded-full">{addr.type}</span>}
+                                            </div>
+                                            <p className="text-sm text-gray-500">{addr.city}, {addr.zip}</p>
+                                            <p className="text-sm text-gray-500">{addr.state}, {addr.country}</p>
+                                        </div>
+                                    </label>
+                                ))
+                            )}
+                        </div>
+
+                        <button
+                            onClick={() => {
+                                setShowAddressModal(false);
+                                handleSubmit(null, false, true); // Confirmed address
+                            }}
+                            disabled={!selectedAddress}
+                            className="w-full py-3.5 bg-primary text-white rounded-xl font-bold text-lg hover:bg-primary-dark transition shadow-lg shadow-green-100 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                        >
+                            Confirm Address & Subscribe
+                        </button>
+                    </div>
+                </div>
+            )}
 
             {/* Conflict Modal */}
             {showConflictModal && (

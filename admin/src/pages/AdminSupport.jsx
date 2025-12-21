@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import api from '../api';
 import {
     CheckCircle, XCircle, Clock, Eye, AlertCircle, Package,
-    MessageSquare, Check, X, User, FileText
+    MessageSquare, User, FileText, X
 } from 'lucide-react';
 
 const AdminSupport = () => {

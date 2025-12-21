@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import api from '../api';
-import { Plus, Edit2, Trash2, X } from 'lucide-react';
+import { Plus, Edit2, Trash2, X, Check } from 'lucide-react';
 
 const AdminCategories = () => {
     const [categories, setCategories] = useState([]);

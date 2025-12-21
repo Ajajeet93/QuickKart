@@ -12,6 +12,8 @@ const SubscriptionDetails = () => {
     const [frequency, setFrequency] = useState('');
     const [saved, setSaved] = useState(false);
     const [updating, setUpdating] = useState(false);
+    const [isChangingAddress, setIsChangingAddress] = useState(false);
+    const [selectedAddressId, setSelectedAddressId] = useState('');
 
     useEffect(() => {
         if (sub) {
@@ -19,17 +21,43 @@ const SubscriptionDetails = () => {
                 setQuantity(sub.items[0].quantity);
             }
             setFrequency(sub.frequency);
+
+            // Determine current address ID for selection state
+            let currentId = '';
+            if (sub.deliveryAddress && typeof sub.deliveryAddress === 'object') {
+                currentId = sub.deliveryAddress._id;
+            } else if (sub.deliveryAddress) {
+                currentId = sub.deliveryAddress;
+            }
+            if (!currentId && sub.addressList?.length > 0) {
+                const defaultAddr = sub.addressList.find(a => a.isDefault) || sub.addressList[0];
+                currentId = defaultAddr._id;
+            }
+            setSelectedAddressId(currentId);
         }
     }, [sub]);
 
     useEffect(() => {
         const fetchSub = async () => {
             try {
+                // Fetch Subscription
                 const res = await fetch(`${API_URL}/api/subscriptions/${id}`, {
-                    credentials: 'include'
+                    credentials: 'include',
+                    cache: 'no-store'
                 });
-                if (!res.ok) throw new Error('Failed to load');
+                if (!res.ok) throw new Error('Failed to load sub');
                 const data = await res.json();
+
+                // Fetch Addresses Independently (Robustness Fix)
+                const addrRes = await fetch(`${API_URL}/api/user/addresses`, {
+                    credentials: 'include',
+                    cache: 'no-store'
+                });
+                const addressData = addrRes.ok ? await addrRes.json() : [];
+
+                // Merge/Override addressList
+                data.addressList = addressData;
+
                 setSub(data);
                 setLoading(false);
             } catch (err) {
@@ -119,8 +147,94 @@ const SubscriptionDetails = () => {
                                             <MapPin size={20} />
                                         </div>
                                         <div>
-                                            <p className="text-xs font-bold text-gray-400 uppercase">Delivery Address</p>
-                                            <p className="font-bold text-gray-900 truncate max-w-[200px]">{sub.addressList?.find(a => a._id === sub.deliveryAddress)?.street || 'Selected Address'}</p>
+                                            <div className="flex justify-between items-center mb-1">
+                                                <p className="text-xs font-bold text-gray-400 uppercase">Delivery Address</p>
+                                                <button
+                                                    onClick={() => setIsChangingAddress(!isChangingAddress)}
+                                                    className="text-xs text-primary font-bold hover:underline"
+                                                >
+                                                    {isChangingAddress ? 'Cancel' : 'Change'}
+                                                </button>
+                                            </div>
+
+                                            {isChangingAddress ? (
+                                                <div className="space-y-2 mt-2 bg-white p-2 rounded-lg border border-gray-100 shadow-sm absolute z-20 w-64 -ml-4">
+                                                    {sub.addressList?.length > 0 ? (
+                                                        <>
+                                                            {sub.addressList.map(addr => (
+                                                                <label
+                                                                    key={addr._id}
+                                                                    className={`flex items-start gap-2 p-2 rounded cursor-pointer hover:bg-gray-50 border transition-all ${selectedAddressId === addr._id ? 'border-primary bg-green-50/20' : 'border-transparent'}`}
+                                                                >
+                                                                    <div className="mt-0.5">
+                                                                        <input
+                                                                            type="radio"
+                                                                            name="changeAddress"
+                                                                            value={addr._id}
+                                                                            checked={selectedAddressId === addr._id}
+                                                                            onChange={() => {
+                                                                                setSelectedAddressId(addr._id);
+                                                                                handleUpdate({ deliveryAddressId: addr._id });
+                                                                                setIsChangingAddress(false);
+                                                                            }}
+                                                                            className="w-3 h-3 text-primary focus:ring-primary"
+                                                                        />
+                                                                    </div>
+                                                                    <div>
+                                                                        <p className="text-xs font-bold text-gray-900">{addr.street}</p>
+                                                                        <p className="text-[10px] text-gray-500">{addr.city}, {addr.zip}</p>
+                                                                    </div>
+                                                                </label>
+                                                            ))}
+                                                            <Link to="/profile" className="block text-center text-[10px] text-primary font-bold mt-1 py-1 border-t border-gray-100">
+                                                                + Add New Address
+                                                            </Link>
+                                                        </>
+                                                    ) : (
+                                                        <div className="text-center p-2">
+                                                            <p className="text-xs text-gray-500 mb-2">No addresses found</p>
+                                                            <Link to="/profile" className="text-xs text-primary font-bold hover:underline">Add Address</Link>
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            ) : (
+                                                <div className="font-bold text-gray-900 text-sm">
+                                                    {(() => {
+                                                        let displayAddress = null;
+
+                                                        // 1. Try populated object
+                                                        if (sub.deliveryAddress && typeof sub.deliveryAddress === 'object') {
+                                                            displayAddress = sub.deliveryAddress;
+                                                        }
+                                                        // 2. Try ID lookup (legacy)
+                                                        else if (sub.deliveryAddress) {
+                                                            displayAddress = sub.addressList?.find(a => String(a._id) === String(sub.deliveryAddress));
+                                                        }
+
+                                                        // 3. Fallback: Default address or first available
+                                                        if (!displayAddress && sub.addressList?.length > 0) {
+                                                            displayAddress = sub.addressList.find(a => a.isDefault) || sub.addressList[0];
+                                                        }
+
+                                                        return displayAddress ? (
+                                                            <>
+                                                                <p>{displayAddress.street}</p>
+                                                                <p>{displayAddress.city}, {displayAddress.zip}</p>
+                                                            </>
+                                                        ) : (
+                                                            <div className="mt-2">
+                                                                <p className="text-red-500 text-xs font-bold mb-2">No address available</p>
+                                                                <Link
+                                                                    to="/profile"
+                                                                    className="inline-flex items-center gap-1 text-xs bg-primary text-white px-3 py-1.5 rounded-lg hover:bg-primary-dark transition shadow-sm"
+                                                                >
+                                                                    <Plus size={14} /> Add Shipping Address
+                                                                </Link>
+                                                            </div>
+                                                        );
+                                                    })()}
+                                                </div>
+                                            )}
                                         </div>
                                     </div>
                                 </div>
@@ -154,23 +268,33 @@ const SubscriptionDetails = () => {
                             </div>
                         </div>
 
-                        {/* Recent Deliveries (Visual Polish Placeholder) */}
+                        {/* Recent Deliveries (Real Data) */}
                         <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
                             <h3 className="font-bold text-gray-900 mb-4">Delivery History</h3>
                             <div className="space-y-4">
-                                {/* Mock history items */}
-                                <div className="flex items-center justify-between p-4 bg-gray-50 rounded-xl border border-gray-100">
-                                    <div className="flex items-center gap-3">
-                                        <div className="p-2 bg-green-100 text-green-600 rounded-full">
-                                            <Package size={18} />
+                                {sub.history && sub.history.length > 0 ? (
+                                    sub.history.map((order) => (
+                                        <div key={order._id} className="flex items-center justify-between p-4 bg-gray-50 rounded-xl border border-gray-100">
+                                            <div className="flex items-center gap-3">
+                                                <div className={`p-2 rounded-full ${order.status === 'Delivered' ? 'bg-green-100 text-green-600' : 'bg-blue-100 text-blue-600'}`}>
+                                                    <Package size={18} />
+                                                </div>
+                                                <div>
+                                                    <p className="font-semibold text-gray-900">{order.status}</p>
+                                                    <p className="text-xs text-gray-500">{new Date(order.createdAt).toLocaleDateString()}</p>
+                                                </div>
+                                            </div>
+                                            <div className="text-right">
+                                                <p className="font-bold text-sm">₹{order.totalAmount.toFixed(2)}</p>
+                                                {/* <Link to={`/orders/${order._id}`} className="text-primary text-xs font-medium hover:underline">View Order</Link> */}
+                                            </div>
                                         </div>
-                                        <div>
-                                            <p className="font-semibold text-gray-900">Delivered</p>
-                                            <p className="text-xs text-gray-500">Oct 24, 2024</p>
-                                        </div>
+                                    ))
+                                ) : (
+                                    <div className="text-center text-gray-500 py-4 text-sm">
+                                        No delivery history yet.
                                     </div>
-                                    <Link to="#" className="text-primary text-sm font-medium hover:underline">View Order</Link>
-                                </div>
+                                )}
                             </div>
                         </div>
                     </div>

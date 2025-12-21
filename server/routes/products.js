@@ -106,19 +106,23 @@ router.delete('/categories/:id', isAuthenticated, isAdmin, async (req, res) => {
 // Products
 router.post('/products', isAuthenticated, isAdmin, async (req, res) => {
     try {
+        console.log('Product POST Body:', req.body);
         const product = new Product(req.body);
         await product.save();
         res.status(201).json(product);
     } catch (err) {
+        console.error('Product POST Error:', err);
         res.status(400).json({ message: err.message });
     }
 });
 
 router.put('/products/:id', isAuthenticated, isAdmin, async (req, res) => {
     try {
+        console.log(`Product PUT Body ID:${req.params.id}`, req.body);
         const product = await Product.findByIdAndUpdate(req.params.id, req.body, { new: true });
         res.json(product);
     } catch (err) {
+        console.error('Product PUT Error:', err);
         res.status(400).json({ message: err.message });
     }
 });

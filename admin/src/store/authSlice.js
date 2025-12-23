@@ -6,7 +6,7 @@ export const loginUser = createAsyncThunk(
     'auth/loginUser',
     async (userData, { rejectWithValue }) => {
         try {
-            const response = await fetch(`${API_URL}/api/auth/login`, {
+            const response = await fetch(`${API_URL}/api/admin/login`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -33,7 +33,7 @@ export const logoutUser = createAsyncThunk(
     'auth/logoutUser',
     async (_, { rejectWithValue }) => {
         try {
-            await fetch(`${API_URL}/api/auth/logout`, {
+            await fetch(`${API_URL}/api/admin/logout`, {
                 method: 'POST',
                 credentials: 'include'
             });
@@ -48,7 +48,7 @@ export const loadUser = createAsyncThunk(
     'auth/loadUser',
     async (_, { rejectWithValue }) => {
         try {
-            const response = await fetch(`${API_URL}/api/auth/me`, {
+            const response = await fetch(`${API_URL}/api/admin/me`, {
                 method: 'GET',
                 credentials: 'include'
             });

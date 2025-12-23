@@ -74,6 +74,7 @@ const AdminLogin = () => {
                                     name="email"
                                     value={credentials.email}
                                     onChange={handleChange}
+                                    autoComplete="username"
                                     className="block w-full pl-10 pr-3 py-3 bg-slate-900 border border-slate-700 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition-all sm:text-sm"
                                     placeholder="admin@company.com"
                                     required
@@ -92,6 +93,7 @@ const AdminLogin = () => {
                                     name="password"
                                     value={credentials.password}
                                     onChange={handleChange}
+                                    autoComplete="current-password"
                                     className="block w-full pl-10 pr-3 py-3 bg-slate-900 border border-slate-700 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition-all sm:text-sm"
                                     placeholder="••••••••"
                                     required

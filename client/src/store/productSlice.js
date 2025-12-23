@@ -74,6 +74,9 @@ const productSlice = createSlice({
     reducers: {
         clearProductCache: (state) => {
             state.cache = {};
+        },
+        clearSelectedProduct: (state) => {
+            state.selectedProduct = null;
         }
     },
     extraReducers: (builder) => {
@@ -123,6 +126,6 @@ const productSlice = createSlice({
     },
 });
 
-export const { clearProductCache } = productSlice.actions;
+export const { clearProductCache, clearSelectedProduct } = productSlice.actions;
 
 export default productSlice.reducer;

@@ -11,6 +11,16 @@ export const loginUser = createAsyncThunk('auth/loginUser', async (credentials, 
     }
 });
 
+// Async thunk for registration
+export const registerUser = createAsyncThunk('auth/registerUser', async (userData, { rejectWithValue }) => {
+    try {
+        const response = await api.post('/api/auth/register', userData);
+        return response.data.user;
+    } catch (error) {
+        return rejectWithValue(error.response?.data?.message || 'Registration failed');
+    }
+});
+
 export const googleLogin = createAsyncThunk('auth/googleLogin', async (credential, { rejectWithValue }) => {
     try {
         const response = await api.post('/api/auth/google', { credential });
@@ -38,7 +48,9 @@ export const loadUser = createAsyncThunk(
     async (_, { rejectWithValue }) => {
         try {
             const response = await api.get('/api/auth/me');
-            return response.data;
+            return response.data; // This now returns { ...userFields } directly from /me endpoint update? 
+            // Wait, previous /me returned fields directly. Let's check /me response structure.
+            // /me returns { id, name, ... }.
         } catch (error) {
             return rejectWithValue(error.response?.data?.message || 'Session expired or invalid');
         }
@@ -46,7 +58,7 @@ export const loadUser = createAsyncThunk(
 );
 
 const initialState = {
-    user: JSON.parse(localStorage.getItem('user')) || null,
+    user: null, // Removed localStorage
     loading: false,
     error: null,
 };
@@ -65,8 +77,6 @@ const authSlice = createSlice({
                     state.user.addresses = [];
                 }
                 state.user.addresses.push(action.payload);
-                // Update local storage to keep it in sync
-                localStorage.setItem('user', JSON.stringify(state.user));
             }
         },
     },
@@ -79,9 +89,20 @@ const authSlice = createSlice({
             .addCase(loginUser.fulfilled, (state, action) => {
                 state.loading = false;
                 state.user = action.payload;
-                localStorage.setItem('user', JSON.stringify(action.payload));
             })
             .addCase(loginUser.rejected, (state, action) => {
+                state.loading = false;
+                state.error = action.payload;
+            })
+            .addCase(registerUser.pending, (state) => {
+                state.loading = true;
+                state.error = null;
+            })
+            .addCase(registerUser.fulfilled, (state, action) => {
+                state.loading = false;
+                state.user = action.payload;
+            })
+            .addCase(registerUser.rejected, (state, action) => {
                 state.loading = false;
                 state.error = action.payload;
             })
@@ -92,7 +113,6 @@ const authSlice = createSlice({
             .addCase(googleLogin.fulfilled, (state, action) => {
                 state.loading = false;
                 state.user = action.payload;
-                localStorage.setItem('user', JSON.stringify(action.payload));
             })
             .addCase(googleLogin.rejected, (state, action) => {
                 state.loading = false;
@@ -100,7 +120,6 @@ const authSlice = createSlice({
             })
             .addCase(logoutUser.fulfilled, (state) => {
                 state.user = null;
-                localStorage.removeItem('user');
             })
             .addCase(loadUser.pending, (state) => {
                 state.loading = true;
@@ -108,12 +127,10 @@ const authSlice = createSlice({
             .addCase(loadUser.fulfilled, (state, action) => {
                 state.loading = false;
                 state.user = action.payload;
-                localStorage.setItem('user', JSON.stringify(action.payload));
             })
             .addCase(loadUser.rejected, (state) => {
                 state.loading = false;
                 state.user = null;
-                localStorage.removeItem('user');
             });
     },
 });

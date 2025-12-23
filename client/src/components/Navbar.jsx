@@ -89,8 +89,9 @@ const Navbar = () => {
     };
 
     const handleLogout = () => {
-        dispatch(logoutUser());
-        navigate('/');
+        dispatch(logoutUser()).then(() => {
+            navigate('/');
+        });
     };
 
     return (

@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { addToCartAsync, updateQuantityAsync, removeFromCartAsync } from "../store/cartSlice";
-import { fetchProductById, fetchProducts } from "../store/productSlice";
+import { fetchProductById, fetchProducts, clearSelectedProduct } from "../store/productSlice";
 import { Truck, ShieldCheck, CheckCircle2, Minus, Plus, ArrowLeft } from "lucide-react";
 import { motion } from "framer-motion";
 import LoadingSpinner from '../components/LoadingSpinner';
@@ -25,6 +25,7 @@ const ProductDetails = () => {
 
     useEffect(() => {
         if (id) {
+            dispatch(clearSelectedProduct());
             dispatch(fetchProductById(id));
             setSelectedImage(null);
             setQuantity(1);

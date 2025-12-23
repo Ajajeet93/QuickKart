@@ -29,7 +29,33 @@ router.post('/register', async (req, res) => {
 
         await newUser.save();
 
-        res.status(201).json({ message: 'User registered successfully' });
+        const userSession = {
+            id: newUser._id,
+            name: newUser.name,
+            email: newUser.email,
+            phone: newUser.phone,
+            role: newUser.role
+        };
+
+        req.session.user = userSession;
+
+        req.session.save((err) => {
+            if (err) return res.status(500).json({ error: 'Session creation failed' });
+
+            res.status(201).json({
+                message: 'User registered successfully',
+                user: {
+                    id: newUser._id,
+                    name: newUser.name,
+                    email: newUser.email,
+                    phone: newUser.phone,
+                    addresses: [], // New user has no addresses
+                    walletBalance: newUser.walletBalance,
+                    role: newUser.role,
+                    createdAt: newUser.createdAt
+                }
+            });
+        });
 
     } catch (err) {
         res.status(500).json({ error: err.message });

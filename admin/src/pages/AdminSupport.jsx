@@ -18,7 +18,7 @@ const AdminSupport = () => {
 
     const fetchRequests = async () => {
         try {
-            const res = await api.get('/api/support/admin/all');
+            const res = await api.get('/api/admin/support');
             setRequests(res.data);
             setLoading(false);
         } catch (error) {
@@ -30,7 +30,7 @@ const AdminSupport = () => {
     const handleStatusUpdate = async (id, status) => {
         setProcessingId(id);
         try {
-            await api.put(`/api/support/admin/${id}/status`, {
+            await api.put(`/api/admin/support/${id}/status`, {
                 status,
                 adminResponse: adminNote || (status === 'Approved' ? 'Your request has been approved.' : 'Your request has been rejected.')
             });

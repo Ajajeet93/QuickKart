@@ -51,7 +51,7 @@ app.use(cookieParser());
 const isProduction = process.env.NODE_ENV === 'production' || process.env.RENDER === 'true';
 
 // Session Configuration
-app.use(session({
+const sessionConfig = {
     secret: process.env.SESSION_SECRET || 'your_secret_key',
     resave: false,
     saveUninitialized: false,
@@ -62,11 +62,30 @@ app.use(session({
     }),
     cookie: {
         httpOnly: true,
-        secure: isProduction, // Secure true in production or on Render
+        secure: isProduction,
         maxAge: 1000 * 60 * 60 * 24, // 1 day
-        sameSite: isProduction ? 'none' : 'lax' // Cross-site cookie requires 'none'
+        sameSite: isProduction ? 'none' : 'lax'
     }
-}));
+};
+
+const userSession = session({
+    ...sessionConfig,
+    name: 'connect.sid' // Default cookie name for users
+});
+
+const adminSession = session({
+    ...sessionConfig,
+    name: 'admin.sid' // Separate cookie name for admins
+});
+
+// Conditional Middleware
+app.use((req, res, next) => {
+    if (req.path.startsWith('/api/admin')) {
+        return adminSession(req, res, next);
+    } else {
+        return userSession(req, res, next);
+    }
+});
 
 // Request Logger
 app.use((req, res, next) => {
@@ -89,16 +108,16 @@ initCron();
 initSimulationCron();
 
 // Routes
+app.use('/api/admin', require('./routes/admin')); // Specific admin routes first
 app.use('/api/auth', authRoutes);
 app.use('/api/user', require('./routes/user'));
 app.use('/api/orders', require('./routes/orders'));
 app.use('/api/subscriptions', require('./routes/subscriptions'));
 app.use('/api/cart', require('./routes/cart'));
-app.use('/api', require('./routes/products')); // Captures /api/products and /api/categories
 app.use('/api/search', require('./routes/search'));
 app.use('/api/wallet', require('./routes/wallet'));
 app.use('/api/support', require('./routes/support'));
-app.use('/api/admin', require('./routes/admin'));
+app.use('/api', require('./routes/products')); // Captures /api/products and /api/categories (General match last)
 
 // Health Check
 app.get('/api/health', (req, res) => {
@@ -112,5 +131,6 @@ app.use((err, req, res, next) => {
 });
 
 app.listen(PORT, () => {
+    // Server is listening
     console.log(`Server running on port ${PORT}`);
 });

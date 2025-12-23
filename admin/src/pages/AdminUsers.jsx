@@ -20,7 +20,7 @@ const AdminUsers = () => {
 
     const fetchUsers = async () => {
         try {
-            const res = await api.get('/api/user/all');
+            const res = await api.get('/api/admin/users');
             setUsers(res.data);
             setLoading(false);
         } catch (error) {
@@ -32,7 +32,7 @@ const AdminUsers = () => {
     const handleDelete = async (id) => {
         if (window.confirm('Are you sure you want to delete this user? This action cannot be undone.')) {
             try {
-                await api.delete(`/api/user/${id}`);
+                await api.delete(`/api/admin/users/${id}`);
                 fetchUsers();
             } catch (error) {
                 console.error('Error deleting user:', error);
@@ -44,7 +44,7 @@ const AdminUsers = () => {
     const handleCreateUser = async (e) => {
         e.preventDefault();
         try {
-            await api.post('/api/user/create', formData);
+            await api.post('/api/admin/users', formData);
             setShowModal(false);
             setFormData({ name: '', email: '', password: '', role: 'user', phone: '' });
             fetchUsers();

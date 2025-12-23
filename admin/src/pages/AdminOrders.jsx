@@ -18,7 +18,7 @@ const AdminOrders = () => {
 
     const fetchOrders = async () => {
         try {
-            const res = await api.get('/api/orders/admin/all');
+            const res = await api.get('/api/admin/orders');
             setOrders(res.data);
             setLoading(false);
         } catch (error) {
@@ -29,7 +29,7 @@ const AdminOrders = () => {
 
     const handleStatusChange = async (id, newStatus) => {
         try {
-            await api.put(`/api/orders/admin/${id}/status`, { status: newStatus });
+            await api.put(`/api/admin/orders/${id}/status`, { status: newStatus });
             fetchOrders();
         } catch (error) {
             console.error('Error updating status:', error);
@@ -40,7 +40,7 @@ const AdminOrders = () => {
     const handleDelete = async (id) => {
         if (window.confirm('Are you sure you want to delete this order?')) {
             try {
-                await api.delete(`/api/orders/admin/${id}`);
+                await api.delete(`/api/admin/orders/${id}`);
                 fetchOrders();
             } catch (error) {
                 console.error('Error deleting order:', error);

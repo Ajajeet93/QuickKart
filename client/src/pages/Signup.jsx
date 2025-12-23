@@ -2,8 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { User, Mail, Lock, Phone, ArrowRight, Loader2, Check, Eye, EyeOff, ShoppingBag } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useDispatch } from 'react-redux';
-import { googleLogin } from '../store/authSlice';
+import { useDispatch, useSelector } from 'react-redux';
+import { googleLogin, registerUser } from '../store/authSlice';
 import { GoogleLogin } from '@react-oauth/google';
 import API_URL from '../config';
 
@@ -55,21 +55,23 @@ const Signup = () => {
             return;
         }
 
-        setLoading(true);
         try {
-            const res = await fetch(`${API_URL}/api/auth/register`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(formData)
-            });
+            // Updated to use Redux thunk for cookie session handling
+            const resultAction = await dispatch(registerUser(formData));
 
-            const data = await res.json();
-            if (!res.ok) throw new Error(data.message || 'Registration failed');
-
-            navigate('/login');
+            if (registerUser.fulfilled.match(resultAction)) {
+                navigate('/');
+                setLoading(false);
+            } else {
+                if (resultAction.payload) {
+                    setError(resultAction.payload);
+                } else {
+                    setError('Registration failed');
+                }
+                setLoading(false);
+            }
         } catch (err) {
-            setError(err.message);
-        } finally {
+            setError('An unexpected error occurred');
             setLoading(false);
         }
     };

@@ -6,10 +6,10 @@ const Cart = require('../models/Cart');
 const User = require('../models/User');
 const Transaction = require('../models/Transaction');
 
-// Middleware
+
 const { isAuthenticated, isAdmin } = require('../middleware/auth');
 
-// POST /api/orders - Create a new order
+
 router.post('/', isAuthenticated, async (req, res) => {
     try {
         const { items, totalAmount, shippingAddressId, paymentMethod } = req.body;
@@ -111,19 +111,7 @@ router.get('/:id', isAuthenticated, async (req, res) => {
 
 // ADMIN ROUTES
 
-// GET /api/orders/admin/all - Get all orders (Admin only)
-router.get('/admin/all', isAuthenticated, isAdmin, async (req, res) => {
-    try {
-        const orders = await Order.find({})
-            .populate('userId', 'name email')
-            .populate('items.product', 'name price image') // Populate product details for display
-            .populate('shippingAddress')
-            .sort({ createdAt: -1 });
-        res.json(orders);
-    } catch (err) {
-        res.status(500).json({ message: err.message });
-    }
-});
+// NOTE: Admin order listing is handled by GET /api/admin/orders (routes/admin.js)
 
 // PUT /api/orders/admin/:id/status - Update order status (Admin only)
 router.put('/admin/:id/status', isAuthenticated, isAdmin, async (req, res) => {

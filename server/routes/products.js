@@ -4,7 +4,7 @@ const Product = require('../models/Product');
 const Category = require('../models/Category');
 const { isAuthenticated, isAdmin } = require('../middleware/auth');
 
-// GET All Categories
+
 router.get('/categories', async (req, res) => {
     try {
         const categories = await Category.find();
@@ -14,7 +14,7 @@ router.get('/categories', async (req, res) => {
     }
 });
 
-// GET All Products (Optionally Filter by Category)
+
 router.get('/products', async (req, res) => {
     try {
         const { category, categoryId, page = 1, limit = 12 } = req.query;
@@ -23,16 +23,13 @@ router.get('/products', async (req, res) => {
         if (categoryId) {
             query.categoryId = categoryId;
         } else if (category) {
-            query.category = { $regex: new RegExp(category, 'i') }; // Fallback to name regex
+            query.category = { $regex: new RegExp(category, 'i') }; 
         }
-
-        // Search functionality
         const { search } = req.query;
         if (search) {
             query.name = { $regex: new RegExp(search, 'i') };
         }
 
-        // Convert page/limit to numbers
         const pageNum = parseInt(page);
         const limitNum = parseInt(limit);
         const skip = (pageNum - 1) * limitNum;
@@ -54,12 +51,9 @@ router.get('/products', async (req, res) => {
     }
 });
 
-// GET Single Product
+
 router.get('/products/:id', async (req, res) => {
     try {
-        // Mock Product for Demo Integration - REMOVED TO PREVENT CONFUSION
-        // if (req.params.id === 'mock_prod_id') { ... }
-
         const product = await Product.findById(req.params.id).populate('categoryId', 'name icon color');
         if (!product) return res.status(404).json({ message: 'Product not found' });
         res.json(product);
@@ -72,9 +66,6 @@ router.get('/products/:id', async (req, res) => {
     }
 });
 
-// ADMIN ROUTES
-
-// Categories
 router.post('/categories', isAuthenticated, isAdmin, async (req, res) => {
     try {
         const category = new Category(req.body);

@@ -18,7 +18,6 @@ const Home = () => {
         dispatch(fetchProducts(categoryFilter));
     }, [dispatch, categoryFilter]);
 
-    // Mock Categories for "Shelf" view
     const categories = [
         { id: 'vegetables', name: 'Vegetables', img: 'https://cdn-icons-png.flaticon.com/512/2329/2329903.png', color: 'bg-green-100' },
         { id: 'fruits', name: 'Fruits', img: 'https://cdn-icons-png.flaticon.com/512/1625/1625048.png', color: 'bg-red-100' },

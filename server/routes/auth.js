@@ -2,8 +2,55 @@ const express = require('express');
 const router = express.Router();
 const bcrypt = require('bcryptjs');
 const User = require('../models/User');
+const RefreshToken = require('../models/RefreshToken');
+const {
+    generateAccessToken,
+    generateRefreshToken,
+    verifyToken,
+    accessCookieOptions,
+    refreshCookieOptions,
+    REFRESH_TOKEN_EXPIRY_MS,
+} = require('../utils/jwt');
+const { isAuthenticated } = require('../middleware/auth');
 
-// Register
+const isProduction = process.env.NODE_ENV === 'production' || process.env.RENDER === 'true';
+
+// ── Shared helper: issue both tokens and persist refresh token ─────
+async function issueTokens(user, res) {
+    const payload = {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+    };
+
+    const accessToken  = generateAccessToken(payload);
+    const refreshToken = generateRefreshToken(payload);
+
+    // Persist refresh token in DB so it can be revoked on logout
+    await RefreshToken.create({
+        userId: user._id,
+        token: refreshToken,
+        expiresAt: new Date(Date.now() + REFRESH_TOKEN_EXPIRY_MS),
+    });
+
+    res.cookie('access_token',  accessToken,  accessCookieOptions(isProduction));
+    res.cookie('refresh_token', refreshToken, refreshCookieOptions(isProduction));
+}
+
+// ── Shared helper: clear both cookies and delete refresh token ─────
+async function revokeTokens(req, res) {
+    const refreshToken = req.cookies.refresh_token;
+    if (refreshToken) {
+        await RefreshToken.deleteOne({ token: refreshToken }).catch(() => {});
+    }
+    res.clearCookie('access_token',  { httpOnly: true, secure: isProduction, sameSite: isProduction ? 'none' : 'lax' });
+    res.clearCookie('refresh_token', { httpOnly: true, secure: isProduction, sameSite: isProduction ? 'none' : 'lax' });
+}
+
+// ────────────────────────────────────────────────────────────────
+// POST /api/auth/register
+// ────────────────────────────────────────────────────────────────
 router.post('/register', async (req, res) => {
     try {
         const { name, email, password, phone } = req.body;
@@ -20,49 +67,32 @@ router.post('/register', async (req, res) => {
         const salt = await bcrypt.genSalt(10);
         const hashedPassword = await bcrypt.hash(password, salt);
 
-        const newUser = new User({
-            name,
-            email,
-            password: hashedPassword,
-            phone
-        });
-
+        const newUser = new User({ name, email, password: hashedPassword, phone });
         await newUser.save();
 
-        const userSession = {
-            id: newUser._id,
-            name: newUser.name,
-            email: newUser.email,
-            phone: newUser.phone,
-            role: newUser.role
-        };
+        await issueTokens(newUser, res);
 
-        req.session.user = userSession;
-
-        req.session.save((err) => {
-            if (err) return res.status(500).json({ error: 'Session creation failed' });
-
-            res.status(201).json({
-                message: 'User registered successfully',
-                user: {
-                    id: newUser._id,
-                    name: newUser.name,
-                    email: newUser.email,
-                    phone: newUser.phone,
-                    addresses: [], // New user has no addresses
-                    walletBalance: newUser.walletBalance,
-                    role: newUser.role,
-                    createdAt: newUser.createdAt
-                }
-            });
+        return res.status(201).json({
+            message: 'User registered successfully',
+            user: {
+                id: newUser._id,
+                name: newUser.name,
+                email: newUser.email,
+                phone: newUser.phone,
+                addresses: [],
+                walletBalance: newUser.walletBalance,
+                role: newUser.role,
+                createdAt: newUser.createdAt,
+            },
         });
-
     } catch (err) {
         res.status(500).json({ error: err.message });
     }
 });
 
-// Login
+// ────────────────────────────────────────────────────────────────
+// POST /api/auth/login
+// ────────────────────────────────────────────────────────────────
 router.post('/login', async (req, res) => {
     try {
         const { email, password } = req.body;
@@ -72,165 +102,168 @@ router.post('/login', async (req, res) => {
         }
 
         const user = await User.findOne({ email });
-        if (!user) {
-            return res.status(400).json({ message: 'User does not exist' });
-        }
+        if (!user) return res.status(400).json({ message: 'User does not exist' });
 
         const isMatch = await bcrypt.compare(password, user.password);
-        if (!isMatch) {
-            return res.status(400).json({ message: 'Invalid credentials' });
-        }
+        if (!isMatch) return res.status(400).json({ message: 'Invalid credentials' });
 
-        // Store user info in session
-        const userSession = {
-            id: user._id,
-            name: user.name,
-            email: user.email,
-            phone: user.phone,
-            role: user.role
-        };
+        await user.populate('addresses');
+        await issueTokens(user, res);
 
-        req.session.user = userSession;
-
-        // Force save to ensure cookie is set before response
-        req.session.save(async (err) => {
-            if (err) return res.status(500).json({ error: 'Session creation failed' });
-
-            // Populate addresses separately or just send what we have depending on needs.
-            // Original code didn't store addresses in token but fetched/populated on login return? 
-            // Original: await user.populate('addresses');
-            // We can fetch addresses to return them.
-            await user.populate('addresses');
-
-            res.json({
-                user: {
-                    id: user._id,
-                    name: user.name,
-                    email: user.email,
-                    phone: user.phone,
-                    addresses: user.addresses || [],
-                    walletBalance: user.walletBalance,
-                    role: user.role,
-                    createdAt: user.createdAt
-                }
-            });
+        return res.json({
+            user: {
+                id: user._id,
+                name: user.name,
+                email: user.email,
+                phone: user.phone,
+                addresses: user.addresses || [],
+                walletBalance: user.walletBalance,
+                role: user.role,
+                createdAt: user.createdAt,
+            },
         });
-
     } catch (err) {
         res.status(500).json({ error: err.message });
     }
 });
 
+// ────────────────────────────────────────────────────────────────
+// POST /api/auth/google
+// ────────────────────────────────────────────────────────────────
 const { OAuth2Client } = require('google-auth-library');
 const googleClient = new OAuth2Client(
     process.env.GOOGLE_CLIENT_ID,
     process.env.GOOGLE_CLIENT_SECRET
 );
 
-/* 
- * @desc    Login with Google
- * @route   POST /api/auth/google
- * @access  Public
- */
 router.post('/google', async (req, res) => {
     try {
         const { credential } = req.body;
-
-        if (!credential) {
-            return res.status(400).json({ message: 'No credential provided' });
-        }
+        if (!credential) return res.status(400).json({ message: 'No credential provided' });
 
         const ticket = await googleClient.verifyIdToken({
             idToken: credential,
             audience: process.env.GOOGLE_CLIENT_ID,
         });
 
-        const payload = ticket.getPayload();
-        const { email, name, sub: googleId, picture } = payload;
+        const { email, name } = ticket.getPayload();
 
         let user = await User.findOne({ email });
 
-        if (user) {
-            // If user exists but doesn't have googleId involved (e.g. traditional registered), link it or just log in?
-            // For safety, if user exists, just log them in. 
-            // Optional: Update profile picture?
-        } else {
-            // Create new user
-            // Generate a random password since they use Google
+        if (!user) {
+            // Hash the random password (Bug Fix)
             const randomPassword = Math.random().toString(36).slice(-8) + Math.random().toString(36).slice(-8);
-
-            user = new User({
-                name,
-                email,
-                password: randomPassword, // This will be hashed by pre-save hook
-                phone: '', // Google doesn't always provide phone, user can add later
-                addresses: []
-            });
+            const hashedPassword = await bcrypt.hash(randomPassword, await bcrypt.genSalt(10));
+            user = new User({ name, email, password: hashedPassword, phone: '', addresses: [] });
             await user.save();
         }
 
-        // Create Session instead of JWT
-        const userSession = {
-            id: user._id,
-            name: user.name,
-            email: user.email,
-            phone: user.phone || '',
-            role: user.role
-        };
+        await user.populate('addresses');
+        await issueTokens(user, res);
 
-        req.session.user = userSession;
-
-        req.session.save(async (err) => {
-            if (err) {
-                console.error('Session Save Error:', err);
-                return res.status(500).json({ message: 'Session creation failed' });
-            }
-
-            // Populate addresses
-            await user.populate('addresses');
-
-            res.status(200).json({
-                user: {
-                    id: user._id,
-                    name: user.name,
-                    email: user.email,
-                    phone: user.phone,
-                    addresses: user.addresses || [],
-                    walletBalance: user.walletBalance,
-                    role: user.role,
-                    createdAt: user.createdAt
-                }
-            });
+        return res.status(200).json({
+            user: {
+                id: user._id,
+                name: user.name,
+                email: user.email,
+                phone: user.phone,
+                addresses: user.addresses || [],
+                walletBalance: user.walletBalance,
+                role: user.role,
+                createdAt: user.createdAt,
+            },
         });
-
     } catch (error) {
         console.error('Google Auth Error:', error);
         res.status(500).json({ message: 'Google authentication failed' });
     }
 });
 
-// Logout
-router.post('/logout', (req, res) => {
-    req.session.destroy((err) => {
-        if (err) return res.status(500).json({ message: 'Logout failed' });
-
-        res.clearCookie('connect.sid'); // Default session cookie name
-        res.json({ message: 'Logged out successfully' });
-    });
-});
-
-// Get Current User Info
-router.get('/me', async (req, res) => {
+// ────────────────────────────────────────────────────────────────
+// POST /api/auth/refresh  — Refresh Token Rotation
+//
+// Every call:
+//  1. Verify the refresh_token cookie (JWT signature + expiry)
+//  2. Confirm it exists in DB (not revoked by logout)
+//  3. DELETE the old refresh token from DB
+//  4. Generate brand-new access_token + refresh_token
+//  5. Save new refresh token to DB
+//  6. Set both new cookies
+//
+// Security benefit: if a refresh token is stolen, the attacker can
+// only use it once. After the legitimate client rotates it, the
+// stolen token is invalid and any further use triggers a 401.
+// ────────────────────────────────────────────────────────────────
+router.post('/refresh', async (req, res) => {
     try {
-        if (!req.session.user) {
-            return res.status(401).json({ message: 'No session, authorization denied' });
+        const oldRefreshToken = req.cookies.refresh_token;
+
+        if (!oldRefreshToken) {
+            return res.status(401).json({ message: 'No refresh token provided' });
         }
 
-        const user = await User.findById(req.session.user.id).select('-password').populate('addresses');
+        // Verify JWT signature + expiry
+        const decoded = verifyToken(oldRefreshToken);
+        if (!decoded) {
+            return res.status(401).json({ message: 'Refresh token expired or invalid' });
+        }
 
+        // Check it exists in DB (not already revoked/rotated)
+        const stored = await RefreshToken.findOne({ token: oldRefreshToken });
+        if (!stored) {
+            return res.status(401).json({ message: 'Refresh token has been revoked or already rotated' });
+        }
+
+        // ── ROTATE ──────────────────────────────────────────────
+        // Delete the old refresh token immediately
+        await RefreshToken.deleteOne({ token: oldRefreshToken });
+
+        // Generate both new tokens
+        const payload = {
+            id: decoded.id,
+            name: decoded.name,
+            email: decoded.email,
+            role: decoded.role,
+        };
+
+        const newAccessToken  = generateAccessToken(payload);
+        const newRefreshToken = generateRefreshToken(payload);
+
+        // Persist the new refresh token in DB
+        await RefreshToken.create({
+            userId: decoded.id,
+            token: newRefreshToken,
+            expiresAt: new Date(Date.now() + REFRESH_TOKEN_EXPIRY_MS),
+        });
+
+        // Set both new cookies
+        res.cookie('access_token',  newAccessToken,  accessCookieOptions(isProduction));
+        res.cookie('refresh_token', newRefreshToken, refreshCookieOptions(isProduction));
+
+        return res.json({ message: 'Tokens rotated successfully' });
+    } catch (err) {
+        res.status(500).json({ message: err.message });
+    }
+});
+
+// ────────────────────────────────────────────────────────────────
+// POST /api/auth/logout
+// Deletes the refresh token from DB (revokes session), clears both cookies.
+// ────────────────────────────────────────────────────────────────
+router.post('/logout', async (req, res) => {
+    await revokeTokens(req, res);
+    return res.json({ message: 'Logged out successfully' });
+});
+
+// ────────────────────────────────────────────────────────────────
+// GET /api/auth/me
+// ────────────────────────────────────────────────────────────────
+router.get('/me', isAuthenticated, async (req, res) => {
+    try {
+        const user = await User.findById(req.user.id).select('-password').populate('addresses');
         if (!user) return res.status(404).json({ message: 'User not found' });
 
-        res.json({
+        return res.json({
             id: user._id,
             name: user.name,
             email: user.email,
@@ -238,56 +271,41 @@ router.get('/me', async (req, res) => {
             addresses: user.addresses || [],
             walletBalance: user.walletBalance,
             role: user.role,
-            createdAt: user.createdAt
+            createdAt: user.createdAt,
         });
     } catch (err) {
         res.status(500).json({ message: 'Server Error' });
     }
 });
 
-// Update User Profile
-router.put('/profile', async (req, res) => {
+// ────────────────────────────────────────────────────────────────
+// PUT /api/auth/profile
+// ────────────────────────────────────────────────────────────────
+router.put('/profile', isAuthenticated, async (req, res) => {
     try {
-        if (!req.session.user) {
-            return res.status(401).json({ message: 'Unauthorized' });
-        }
-
         const { name, phone } = req.body;
-        const user = await User.findById(req.session.user.id);
 
-        if (!user) {
-            return res.status(404).json({ message: 'User not found' });
-        }
+        const user = await User.findById(req.user.id);
+        if (!user) return res.status(404).json({ message: 'User not found' });
 
         if (name) user.name = name;
         if (phone) user.phone = phone;
 
         await user.save();
+        await user.populate('addresses');
 
-        // Update session data
-        req.session.user.name = user.name;
-        req.session.user.phone = user.phone;
-
-        req.session.save(async (err) => {
-            if (err) return res.status(500).json({ message: 'Session update failed' });
-
-            // Ensure consistency by populating addresses
-            await user.populate('addresses');
-
-            res.json({
-                user: {
-                    id: user._id,
-                    name: user.name,
-                    email: user.email,
-                    phone: user.phone,
-                    addresses: user.addresses || [],
-                    walletBalance: user.walletBalance,
-                    createdAt: user.createdAt
-                },
-                message: 'Profile updated successfully'
-            });
+        return res.json({
+            user: {
+                id: user._id,
+                name: user.name,
+                email: user.email,
+                phone: user.phone,
+                addresses: user.addresses || [],
+                walletBalance: user.walletBalance,
+                createdAt: user.createdAt,
+            },
+            message: 'Profile updated successfully',
         });
-
     } catch (err) {
         console.error(err);
         res.status(500).json({ message: 'Server Error' });

@@ -4,6 +4,10 @@ import './index.css';
 import App from './App.jsx';
 import { Provider } from 'react-redux';
 import store from './store';
+import { injectStore } from './api';
+
+// Inject Redux store into api.js AFTER store is created — breaks circular dependency
+injectStore(store);
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>

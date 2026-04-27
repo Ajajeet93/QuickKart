@@ -1,4 +1,4 @@
-import React, { Suspense } from 'react';
+import React, { Suspense, useEffect } from 'react';
 import { BrowserRouter as Router } from 'react-router-dom';
 import Navbar from './components/Navbar';
 import LoadingSpinner from './components/LoadingSpinner';
@@ -8,18 +8,20 @@ import { useDispatch, useSelector } from 'react-redux';
 import { loadUser } from './store/authSlice';
 import { fetchAddresses } from './store/addressSlice';
 import { fetchCart } from './store/cartSlice';
-import { useEffect } from 'react';
 import { Toaster } from 'react-hot-toast';
 
 function App() {
   const dispatch = useDispatch();
   const { user } = useSelector(state => state.auth);
 
+  // Re-hydrate user from JWT on mount.
+  // The Axios interceptor in api.js will silently refresh the access token
+  // if it has expired, so this always returns the correct user state.
   useEffect(() => {
     dispatch(loadUser());
   }, [dispatch]);
 
-  // Fetch addresses when user is loaded
+  // Fetch user data when logged in
   useEffect(() => {
     if (user) {
       dispatch(fetchAddresses());

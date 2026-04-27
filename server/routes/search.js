@@ -3,7 +3,7 @@ const router = express.Router();
 const Product = require('../models/Product');
 const Category = require('../models/Category');
 
-// GET /api/search?q=query
+
 router.get('/', async (req, res) => {
     try {
         const { q } = req.query;
@@ -13,11 +13,11 @@ router.get('/', async (req, res) => {
 
         const regex = new RegExp(q, 'i');
 
-        // Run queries in parallel for performance
+       
         const [products, totalProducts, categories] = await Promise.all([
             Product.find({ name: regex })
                 .select('name category image price _id')
-                .limit(3), // Limit strictly to 3 as requested
+                .limit(3), 
             Product.countDocuments({ name: regex }),
             Category.find({ name: regex })
                 .select('name icon color _id')

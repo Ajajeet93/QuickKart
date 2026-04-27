@@ -5,12 +5,10 @@ const Address = require('../models/Address');
 const bcrypt = require('bcryptjs');
 
 
-// Middleware to verify token
+
 const { isAuthenticated, isAdmin } = require('../middleware/auth');
 
-// ADMIN ROUTES
 
-// GET /api/user/all - Get all users (Admin only)
 router.get('/all', isAuthenticated, isAdmin, async (req, res) => {
     try {
         const users = await User.find({}).select('-password').sort({ createdAt: -1 });
@@ -20,23 +18,20 @@ router.get('/all', isAuthenticated, isAdmin, async (req, res) => {
     }
 });
 
-// DELETE /api/user/:id - Delete a user (Admin only)
+
 router.delete('/:id', isAuthenticated, isAdmin, async (req, res) => {
     try {
         await User.findByIdAndDelete(req.params.id);
-        // Optional: Remove user's orders/cart? Keeping it simple for now.
         res.json({ message: 'User deleted' });
     } catch (err) {
         res.status(500).json({ message: err.message });
     }
 });
 
-// POST /api/user/create - Create a new user (Admin only)
+
 router.post('/create', isAuthenticated, isAdmin, async (req, res) => {
     try {
         const { name, email, password, role, phone } = req.body;
-
-        // Validation
         if (!name || !email || !password) {
             return res.status(400).json({ message: 'Please enter all required fields' });
         }

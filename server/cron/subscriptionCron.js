@@ -3,7 +3,6 @@ const Subscription = require('../models/Subscription');
 const User = require('../models/User');
 const Order = require('../models/Order');
 const Transaction = require('../models/Transaction');
-const Product = require('../models/Product');
 
 const processSubscriptions = async (simulatedDate = null) => {
     console.log('Running Subscription Cron Job:', simulatedDate || new Date().toISOString());
@@ -12,18 +11,16 @@ const processSubscriptions = async (simulatedDate = null) => {
         const today = simulatedDate ? new Date(simulatedDate) : new Date();
         today.setHours(0, 0, 0, 0);
 
-        // Find active subscriptions due today or before (catch-up)
+        // Find all active subscriptions due today or before (catch-up)
         const subscriptions = await Subscription.find({
             status: 'Active',
             nextDeliveryDate: { $lte: today },
-            paymentMethod: { $ne: 'Credit Card' } // Only process Wallet/Auto payments. Credit Cards might need external gateway hook.
         }).populate('items.product');
 
         console.log(`Found ${subscriptions.length} due subscriptions.`);
 
         for (const sub of subscriptions) {
             try {
-                // Calculate Amount
                 let totalAmount = 0;
                 const orderItems = [];
 
@@ -31,86 +28,96 @@ const processSubscriptions = async (simulatedDate = null) => {
                     const product = item.product; // populated
                     if (!product) continue;
 
-                    const price = product.price * 0.85; // 15% discount
-                    totalAmount += price * item.quantity;
+                    // Bug Fix 1: Use variant price if available, fallback to base product price
+                    const basePrice = (item.variant && item.variant.price)
+                        ? item.variant.price
+                        : product.price;
+                    const discountedPrice = basePrice * 0.85; // 15% subscription discount
+
+                    totalAmount += discountedPrice * item.quantity;
 
                     orderItems.push({
-                        product: product._id,
+                        product:  product._id,
                         quantity: item.quantity,
-                        price: price
+                        price:    discountedPrice,
+                        weight:   item.variant?.weight || null, // Bug Fix 4: include variant weight
                     });
                 }
 
-                if (totalAmount === 0) continue;
+                if (totalAmount === 0) {
+                    console.log(`Skipping Subscription ${sub._id}: calculated amount is 0`);
+                    continue;
+                }
 
-                // Check Wallet Balance
                 const user = await User.findById(sub.userId);
-                if (!user) continue;
+                if (!user) {
+                    console.log(`Skipping Subscription ${sub._id}: user not found`);
+                    continue;
+                }
 
                 if (user.walletBalance >= totalAmount) {
-                    // Success Flow
+                    // ── SUCCESS FLOW ──────────────────────────────────────
 
-                    // 1. Deduct Balance
+                    // 1. Deduct wallet balance
                     user.walletBalance -= totalAmount;
                     await user.save();
 
                     // 2. Create Order
                     const newOrder = new Order({
-                        userId: sub.userId,
-                        items: orderItems,
+                        userId:          sub.userId,
+                        items:           orderItems,
                         totalAmount,
-                        shippingAddress: sub.deliveryAddress, // Assuming ID is stored or we need to fetch object? Model says ID usually.
-                        paymentMethod: 'Wallet',
-                        status: 'Processing',
-                        paymentStatus: 'Paid',
-                        orderType: 'subscription',
-                        subscriptionId: sub._id,
-                        deliverySlot: 'Daily by 9:00 AM'
+                        shippingAddress: sub.deliveryAddress,
+                        status:          'Processing',
+                        paymentStatus:   'Paid',
+                        paymentMethod:   'Wallet',
+                        orderType:       'subscription',
+                        subscriptionId:  sub._id,                 // legacy field
+                        subscriptionIds: [sub._id],               // Bug Fix 2: also set array field (used by history query)
+                        deliverySlot:    'Daily by 9:00 AM',
                     });
                     await newOrder.save();
 
                     // 3. Create Transaction
                     await Transaction.create({
-                        userId: sub.userId,
-                        amount: totalAmount,
-                        type: 'debit',
+                        userId:      sub.userId,
+                        amount:      totalAmount,
+                        type:        'debit',
                         description: `Auto-Subscription #${sub._id} (Order #${newOrder._id})`,
-                        status: 'success'
+                        status:      'success',
                     });
 
-                    // 4. Update Next Delivery Date
+                    // 4. Advance nextDeliveryDate
                     const currentNextDate = new Date(sub.nextDeliveryDate);
-                    let newNextDate = new Date(currentNextDate);
+                    const newNextDate = new Date(currentNextDate);
 
                     switch (sub.frequency) {
-                        case 'daily': newNextDate.setDate(currentNextDate.getDate() + 1); break;
-                        case 'weekly': newNextDate.setDate(currentNextDate.getDate() + 7); break;
-                        case 'monthly': newNextDate.setMonth(currentNextDate.getMonth() + 1); break;
-                        default: newNextDate.setMonth(currentNextDate.getMonth() + 1);
+                        case 'daily':   newNextDate.setDate(currentNextDate.getDate() + 1);      break;
+                        case 'weekly':  newNextDate.setDate(currentNextDate.getDate() + 7);      break;
+                        case 'monthly': newNextDate.setMonth(currentNextDate.getMonth() + 1);    break;
+                        default:        newNextDate.setMonth(currentNextDate.getMonth() + 1);
                     }
 
                     sub.nextDeliveryDate = newNextDate;
+                    sub.lastDeliveryDate = today;  // Bug Fix 3: update lastDeliveryDate
                     await sub.save();
 
-                    console.log(`Processed Subscription ${sub._id}: Success`);
+                    console.log(`✅ Subscription ${sub._id}: Processed (₹${totalAmount.toFixed(2)}) | Next: ${newNextDate.toDateString()}`);
 
                 } else {
-                    // Failure Flow: Insufficient Funds
-                    // For now, we can skip or mark as 'Paused' or log a failed transaction attempt.
-                    // Let's create a failed transaction log so user knows.
+                    // ── FAILURE FLOW: Insufficient wallet ─────────────────
+                    // nextDeliveryDate is NOT advanced — cron will retry next run
+                    // (user must top up their wallet)
+
                     await Transaction.create({
-                        userId: sub.userId,
-                        amount: totalAmount,
-                        type: 'debit',
-                        description: `Auto-Subscription Failed: Insufficient Fund`,
-                        status: 'failed'
+                        userId:      sub.userId,
+                        amount:      totalAmount,
+                        type:        'debit',
+                        description: `Auto-Subscription Failed: Insufficient funds for Sub #${sub._id}`,
+                        status:      'failed',
                     });
 
-                    console.log(`Processed Subscription ${sub._id}: Failed (Insufficient Funds)`);
-
-                    // Optional: Pause subscription?
-                    // sub.status = 'Paused';
-                    // await sub.save();
+                    console.log(`❌ Subscription ${sub._id}: Failed — Insufficient funds (need ₹${totalAmount.toFixed(2)}, have ₹${user.walletBalance.toFixed(2)})`);
                 }
 
             } catch (err) {
@@ -123,15 +130,8 @@ const processSubscriptions = async (simulatedDate = null) => {
     }
 };
 
-// Run at 09:00 AM every day
-// const task = cron.schedule('0 9 * * *', processSubscriptions);
-
-// For Demo/Testing: Run every 1 minute to show user it works? 
-// Or stick to midnight. User asked for "daily".
-// I'll export a function to init it.
-
 const initCron = () => {
-    // Running at 9 AM daily
+    // Runs daily at 9:00 AM server time
     cron.schedule('0 9 * * *', processSubscriptions);
     console.log('Subscription Cron Job Scheduled (Daily at 09:00 AM)');
 };

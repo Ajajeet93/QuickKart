@@ -4,7 +4,7 @@ const User = require('../models/User');
 const Transaction = require('../models/Transaction');
 const { isAuthenticated } = require('../middleware/auth');
 
-// GET /api/wallet - Get balance and history
+
 router.get('/', isAuthenticated, async (req, res) => {
     try {
         const user = await User.findById(req.user.id);
@@ -19,7 +19,6 @@ router.get('/', isAuthenticated, async (req, res) => {
     }
 });
 
-// POST /api/wallet/add - Add money to wallet
 router.post('/add', isAuthenticated, async (req, res) => {
     try {
         const { amount } = req.body;
@@ -50,7 +49,6 @@ router.post('/add', isAuthenticated, async (req, res) => {
 });
 
 
-// GET /api/wallet/cards - Get saved cards
 router.get('/cards', isAuthenticated, async (req, res) => {
     try {
         const user = await User.findById(req.user.id);
@@ -60,7 +58,7 @@ router.get('/cards', isAuthenticated, async (req, res) => {
     }
 });
 
-// POST /api/wallet/cards - Add a new card
+
 router.post('/cards', isAuthenticated, async (req, res) => {
     try {
         const { brand, last4, expMonth, expYear, cardHolder } = req.body;
@@ -84,7 +82,6 @@ router.post('/cards', isAuthenticated, async (req, res) => {
     }
 });
 
-// DELETE /api/wallet/cards/:id - Delete a card
 router.delete('/cards/:id', isAuthenticated, async (req, res) => {
     try {
         const user = await User.findById(req.user.id);

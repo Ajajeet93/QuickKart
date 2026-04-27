@@ -5,6 +5,10 @@ import App from './App.jsx';
 import { Provider } from 'react-redux';
 import store from './store';
 import { GoogleOAuthProvider } from '@react-oauth/google';
+import { injectStore } from './api';
+
+// Inject Redux store into api.js AFTER store is created — breaks circular dependency
+injectStore(store);
 
 const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID || "YOUR_GOOGLE_CLIENT_ID_HERE";
 

@@ -62,7 +62,7 @@ app.use(metricsMiddleware);
 const allowedOrigins = [
     env.CLIENT_URL,
     env.ADMIN_URL,
-    // CloudFront production URLs (hardcoded fallback when env vars not set)
+    // CloudFront production URLs
     'https://d1l2jawrwgmqiu.cloudfront.net',
     'https://de3rqz4r4hq4z.cloudfront.net',
     // Local development
@@ -71,14 +71,19 @@ const allowedOrigins = [
     'http://localhost:5175', 'http://127.0.0.1:5175',
 ].filter(Boolean).map(o => o.replace(/\/$/, ''));
 
+// Allow any Vercel preview/production deployment for this project
+const allowedPatterns = [
+    /^https:\/\/quick-kart[\w-]*\.vercel\.app$/,
+    /^https:\/\/quickkart[\w-]*\.vercel\.app$/,
+];
+
 app.use(
     cors({
         origin: (origin, callback) => {
-            if (!origin || allowedOrigins.includes(origin) || !isProduction) {
-                callback(null, true);
-            } else {
-                callback(new Error(`CORS blocked: ${origin}`));
-            }
+            if (!origin || !isProduction) return callback(null, true);
+            if (allowedOrigins.includes(origin)) return callback(null, true);
+            if (allowedPatterns.some(p => p.test(origin))) return callback(null, true);
+            callback(new Error(`CORS blocked: ${origin}`));
         },
         credentials: true,
     })

@@ -2,7 +2,7 @@ import React, { useEffect } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { CheckCircle, ArrowRight, Download } from 'lucide-react';
 import { useDispatch } from 'react-redux';
-import { clearCart } from '../store/cartSlice';
+import { clearCartAsync } from '../store/cartSlice';
 
 const PaymentSuccess = () => {
     const [searchParams] = useSearchParams();
@@ -17,8 +17,14 @@ const PaymentSuccess = () => {
     }
 
     useEffect(() => {
-        dispatch(clearCart());
-    }, [dispatch]);
+        // Only clear cart for actual order payments.
+        // Subscriptions don't consume cart items — clearing the cart after a
+        // subscription was the root cause of this bug.
+        if (type !== 'subscription') {
+            dispatch(clearCartAsync());
+        }
+    }, [dispatch, type]);
+
 
     const isSubscription = type === 'subscription';
 

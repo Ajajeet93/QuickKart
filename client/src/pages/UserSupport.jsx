@@ -15,8 +15,8 @@ const UserSupport = () => {
 
     const fetchMyRequests = async () => {
         try {
-            const res = await axios.get(`${API_URL}/api/support/my`, { withCredentials: true });
-            setRequests(res.data);
+            const res = await axios.get(`${API_URL}/api/v1/support/my`, { withCredentials: true });
+            setRequests(res.data?.data || []);
         } catch (error) {
             console.error('Error fetching support requests:', error);
         } finally {

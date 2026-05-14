@@ -19,10 +19,12 @@ const MySubscriptions = () => {
     useEffect(() => {
         const fetchSubs = async () => {
             try {
-                const res = await fetch(`${API_URL}/api/subscriptions`, {
+                const res = await fetch(`${API_URL}/api/v1/subscriptions`, {
                     credentials: 'include'
                 });
-                const data = await res.json();
+                const json = await res.json();
+                // Backend may return raw array or wrapped { data: [...] }
+                const data = Array.isArray(json) ? json : (Array.isArray(json?.data) ? json.data : []);
                 setSubscriptions(data);
                 setLoading(false);
             } catch (err) {
@@ -35,7 +37,7 @@ const MySubscriptions = () => {
 
     const handleStatusChange = async (id, newStatus) => {
         try {
-            await fetch(`${API_URL}/api/subscriptions/${id}`, {
+            await fetch(`${API_URL}/api/v1/subscriptions/${id}`, {
                 method: 'PATCH',
                 headers: { 'Content-Type': 'application/json' },
                 credentials: 'include',
@@ -60,7 +62,7 @@ const MySubscriptions = () => {
         if (!selectedSubId) return;
 
         try {
-            await fetch(`${API_URL}/api/subscriptions/${selectedSubId}`, {
+            await fetch(`${API_URL}/api/v1/subscriptions/${selectedSubId}`, {
                 method: 'DELETE',
                 credentials: 'include'
             });
@@ -72,7 +74,7 @@ const MySubscriptions = () => {
         }
     };
 
-    const filteredSubscriptions = subscriptions.filter(sub => {
+    const filteredSubscriptions = (Array.isArray(subscriptions) ? subscriptions : []).filter(sub => {
         if (filter === 'all') return true;
         return sub.frequency === filter;
     });

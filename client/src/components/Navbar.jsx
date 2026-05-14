@@ -48,7 +48,7 @@ const Navbar = () => {
             if (searchQuery.trim().length >= 2) {
                 setIsSearching(true);
                 try {
-                    const res = await fetch(`${API_URL}/api/search?q=${encodeURIComponent(searchQuery)}`);
+                    const res = await fetch(`${API_URL}/api/v1/search?q=${encodeURIComponent(searchQuery)}`);
                     if (res.ok) {
                         const data = await res.json();
                         setSuggestions(data); // { products: [], categories: [], totalProducts: 0 }

@@ -6,7 +6,7 @@ export const fetchProducts = createAsyncThunk(
     'products/fetchProducts',
     async (params, { rejectWithValue, getState }) => {
         try {
-            let url = '/api/products';
+            let url = '/api/v1/products';
             const query = new URLSearchParams();
 
             // Handle params
@@ -49,7 +49,7 @@ export const fetchProductById = createAsyncThunk(
     'products/fetchProductById',
     async (id, { rejectWithValue }) => {
         try {
-            const response = await api.get(`/api/products/${id}`);
+            const response = await api.get(`/api/v1/products/${id}`);
             return response.data;
         } catch (error) {
             return rejectWithValue(error.response?.data?.message || 'Failed to fetch product');

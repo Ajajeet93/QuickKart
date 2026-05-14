@@ -27,14 +27,14 @@ const OrderDetails = () => {
     useEffect(() => {
         const fetchOrder = async () => {
             try {
-                const response = await fetch(`${API_URL}/api/orders/${id}`, {
+                const response = await fetch(`${API_URL}/api/v1/orders/${id}`, {
                     headers: { 'Content-Type': 'application/json' },
                     credentials: 'include'
                 });
 
                 if (response.ok) {
                     const data = await response.json();
-                    setOrder(data);
+                    setOrder(data.data);
                 } else {
                     const errData = await response.json();
                     setError(errData.message || 'Order not found');
@@ -48,17 +48,13 @@ const OrderDetails = () => {
 
         const fetchRequests = async () => {
             try {
-                const res = await fetch(`${API_URL}/api/support/order/${id}`, {
+                const res = await fetch(`${API_URL}/api/v1/support/order/${id}`, {
                     headers: { 'Content-Type': 'application/json' },
                     credentials: 'include'
                 });
                 if (res.ok) {
                     const data = await res.json();
-                    if (Array.isArray(data)) {
-                        setRequests(data);
-                    } else {
-                        setRequests([]);
-                    }
+                    setRequests(data.data || []);
                 }
             } catch (error) {
                 console.error("Error fetching requests:", error);
@@ -98,7 +94,7 @@ const OrderDetails = () => {
         if (selectedIssueItems.length === 0) return;
         setIsSubmitting(true);
         try {
-            const res = await fetch(`${API_URL}/api/support/request`, {
+            const res = await fetch(`${API_URL}/api/v1/support/request`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -119,10 +115,10 @@ const OrderDetails = () => {
                 toast.success('Request submitted successfully!');
                 setShowReportModal(false);
                 // Refresh requests
-                const reqRes = await fetch(`${API_URL}/api/support/order/${id}`, { credentials: 'include' });
+                const reqRes = await fetch(`${API_URL}/api/v1/support/order/${id}`, { credentials: 'include' });
                 if (reqRes.ok) {
                     const data = await reqRes.json();
-                    if (Array.isArray(data)) setRequests(data);
+                    setRequests(data.data || []);
                 }
             } else {
                 const errData = await res.json();

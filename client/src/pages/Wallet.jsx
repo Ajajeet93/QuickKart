@@ -30,22 +30,24 @@ const Wallet = () => {
 
     const fetchWalletData = async () => {
         try {
-            const res = await fetch(`${API_URL}/api/wallet`, {
+            const res = await fetch(`${API_URL}/api/v1/wallet`, {
                 headers: { 'Content-Type': 'application/json' },
                 credentials: 'include'
             });
             if (!res.ok) throw new Error('Failed to fetch wallet data');
-            const data = await res.json();
-            setBalance(data.balance);
-            setTransactions(data.transactions);
+            const resData = await res.json();
+            const data = resData.data; // Extract standard API wrapper payload
+            setBalance(data?.balance || 0);
+            setTransactions(data?.transactions || []);
 
             // Fetch Cards
-            const cardsRes = await fetch(`${API_URL}/api/wallet/cards`, {
+            const cardsRes = await fetch(`${API_URL}/api/v1/wallet/cards`, {
                 headers: { 'Content-Type': 'application/json' },
                 credentials: 'include'
             });
             if (cardsRes.ok) {
-                setCards(await cardsRes.json());
+                const cardsData = await cardsRes.json();
+                setCards(cardsData.data || []);
             }
         } catch (err) {
             console.error(err);
@@ -69,11 +71,14 @@ const Wallet = () => {
             // Simulate Payment Gateway Delay
             await new Promise(resolve => setTimeout(resolve, 1000));
 
-            const res = await fetch(`${API_URL}/api/wallet/add`, {
+            // Generate a unique paymentId (required by backend for replay-attack prevention)
+            const paymentId = `PAY-${Date.now()}-${Math.random().toString(36).substring(2, 9).toUpperCase()}`;
+
+            const res = await fetch(`${API_URL}/api/v1/wallet/add`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 credentials: 'include',
-                body: JSON.stringify({ amount })
+                body: JSON.stringify({ amount: Number(amount), paymentId })
             });
 
             if (!res.ok) {
@@ -115,7 +120,7 @@ const Wallet = () => {
                 cardHolder: cardForm.name
             };
 
-            const res = await fetch(`${API_URL}/api/wallet/cards`, {
+            const res = await fetch(`${API_URL}/api/v1/wallet/cards`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 credentials: 'include',
@@ -147,7 +152,7 @@ const Wallet = () => {
         if (!selectedCardId) return;
 
         try {
-            await fetch(`${API_URL}/api/wallet/cards/${selectedCardId}`, {
+            await fetch(`${API_URL}/api/v1/wallet/cards/${selectedCardId}`, {
                 method: 'DELETE',
                 credentials: 'include'
             });
@@ -245,7 +250,7 @@ const Wallet = () => {
                                 </form>
                             ) : (
                                 <div className="space-y-3">
-                                    {cards.length > 0 ? (
+                                    {Array.isArray(cards) && cards.length > 0 ? (
                                         cards.map(card => (
                                             <div key={card._id} className="flex items-center justify-between p-4 border border-gray-100 rounded-xl hover:shadow-md transition bg-white group">
                                                 <div className="flex items-center gap-3">
@@ -323,7 +328,7 @@ const Wallet = () => {
                             </h3>
 
                             <div className="space-y-2 max-h-[300px] overflow-y-auto pr-2 overflow-x-hidden">
-                                {transactions.length > 0 ? (
+                                {Array.isArray(transactions) && transactions.length > 0 ? (
                                     transactions.map((tx) => (
                                         <div key={tx._id} className="flex items-center justify-between p-3 rounded-xl hover:bg-gray-50 transition border border-transparent hover:border-gray-100">
                                             <div className="flex items-center gap-3 min-w-0 flex-1">
@@ -336,7 +341,7 @@ const Wallet = () => {
                                                 </div>
                                             </div>
                                             <span className={`font-bold text-sm whitespace-nowrap ml-4 ${tx.type === 'credit' ? 'text-green-600' : 'text-gray-900'}`}>
-                                                {tx.type === 'credit' ? '+' : '-'}₹{tx.amount.toLocaleString()}
+                                                {tx.type === 'credit' ? '+' : '-'}₹{tx.amount?.toLocaleString() || tx.amount}
                                             </span>
                                         </div>
                                     ))

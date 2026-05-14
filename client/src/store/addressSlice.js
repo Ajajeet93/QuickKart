@@ -7,8 +7,8 @@ export const fetchAddresses = createAsyncThunk(
     'addresses/fetchAddresses',
     async (_, { rejectWithValue }) => {
         try {
-            const response = await api.get('/api/user/addresses');
-            return response.data;
+            const response = await api.get('/api/v1/user/addresses');
+            return Array.isArray(response.data) ? response.data : (response.data.data || []);
         } catch (error) {
             return rejectWithValue(error.response?.data?.message || 'Failed to fetch addresses');
         }
@@ -20,7 +20,7 @@ export const addNewAddress = createAsyncThunk(
     'addresses/addNewAddress',
     async (addressData, { rejectWithValue }) => {
         try {
-            const response = await api.post('/api/user/addresses', addressData);
+            const response = await api.post('/api/v1/user/addresses', addressData);
             return response.data;
         } catch (error) {
             return rejectWithValue(error.response?.data?.message || 'Failed to add address');
@@ -33,7 +33,7 @@ export const updateAddress = createAsyncThunk(
     'addresses/updateAddress',
     async ({ id, addressData }, { rejectWithValue }) => {
         try {
-            const response = await api.put(`/api/user/addresses/${id}`, addressData);
+            const response = await api.put(`/api/v1/user/addresses/${id}`, addressData);
             return response.data;
         } catch (error) {
             return rejectWithValue(error.response?.data?.message || 'Failed to update address');
@@ -46,7 +46,7 @@ export const deleteAddress = createAsyncThunk(
     'addresses/deleteAddress',
     async (id, { rejectWithValue }) => {
         try {
-            await api.delete(`/api/user/addresses/${id}`);
+            await api.delete(`/api/v1/user/addresses/${id}`);
             return id; // Return ID to remove from state
         } catch (error) {
             return rejectWithValue(error.response?.data?.message || 'Failed to delete address');

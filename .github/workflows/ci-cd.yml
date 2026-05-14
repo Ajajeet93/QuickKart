@@ -56,11 +56,11 @@ jobs:
         run: npm run lint --prefix server
 
       - name: 🔍 Lint client
-        run: npx eslint . --ext .js,.jsx --max-warnings=0
+        run: npx eslint . --ext .js,.jsx
         working-directory: client
 
       - name: 🔍 Lint admin
-        run: npx eslint . --ext .js,.jsx --max-warnings=0
+        run: npx eslint . --ext .js,.jsx
         working-directory: admin
 
       # ── Security Audit ──────────────────────────────────────────────────

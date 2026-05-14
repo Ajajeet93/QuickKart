@@ -1,0 +1,157 @@
+# =============================================================================
+# QuickKart — GitHub Actions CI/CD Pipeline
+#
+# Triggers:
+#   - Every push to main branch  → runs CI + Deploy
+#   - Every pull request to main → runs CI only (no deploy)
+#
+# Jobs:
+#   1. ci     → install, lint, security audit, build client & admin
+#   2. deploy → build Docker image, push to Docker Hub, redeploy on EC2
+#
+# Required GitHub Secrets (Settings → Secrets → Actions):
+#   DOCKERHUB_USERNAME   → your Docker Hub username (ajajeet93)
+#   DOCKERHUB_TOKEN      → Docker Hub access token (not password)
+#   EC2_HOST             → EC2 public IP address
+#   EC2_SSH_KEY          → contents of your .pem private key file
+# =============================================================================
+
+name: QuickKart CI/CD
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  # ── Job 1: CI — Lint, Audit, Build ────────────────────────────────────────
+  ci:
+    name: CI — Lint, Audit & Build
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+
+      # ── Install all 3 apps in parallel ──────────────────────────────────
+      - name: ⚙️ Setup Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+          cache-dependency-path: |
+            server/package-lock.json
+            client/package-lock.json
+            admin/package-lock.json
+
+      - name: 📦 Install dependencies (all 3 apps)
+        run: |
+          npm ci --prefix server
+          npm ci --prefix client
+          npm ci --prefix admin
+
+      # ── Lint ────────────────────────────────────────────────────────────
+      - name: 🔍 Lint server
+        run: npm run lint --prefix server
+
+      - name: 🔍 Lint client
+        run: npx eslint . --ext .js,.jsx --max-warnings=0
+        working-directory: client
+
+      - name: 🔍 Lint admin
+        run: npx eslint . --ext .js,.jsx --max-warnings=0
+        working-directory: admin
+
+      # ── Security Audit ──────────────────────────────────────────────────
+      - name: 🔒 Security audit (server)
+        run: npm audit --audit-level=high
+        working-directory: server
+        continue-on-error: true
+
+      - name: 🔒 Security audit (client)
+        run: npm audit --audit-level=high
+        working-directory: client
+        continue-on-error: true
+
+      - name: 🔒 Security audit (admin)
+        run: npm audit --audit-level=high
+        working-directory: admin
+        continue-on-error: true
+
+      # ── Build frontends ─────────────────────────────────────────────────
+      - name: 🏗️ Build client (Vite)
+        run: npm run build --prefix client
+        env:
+          VITE_API_URL: http://${{ secrets.EC2_HOST }}:5000
+
+      - name: 🏗️ Build admin (Vite)
+        run: npm run build --prefix admin
+        env:
+          VITE_API_URL: http://${{ secrets.EC2_HOST }}:5000
+
+      - name: ✅ CI passed
+        run: echo "All checks passed — safe to deploy"
+
+  # ── Job 2: Deploy — Docker Build + EC2 Deploy ─────────────────────────────
+  deploy:
+    name: Deploy — Docker + EC2
+    runs-on: ubuntu-latest
+    needs: ci                          # only runs if CI job passes
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+
+      # ── Docker Hub login ─────────────────────────────────────────────────
+      - name: 🐳 Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      # ── Build and push Docker image ──────────────────────────────────────
+      - name: 🐳 Build and push server image
+        uses: docker/build-push-action@v5
+        with:
+          context: ./server
+          push: true
+          tags: |
+            ${{ secrets.DOCKERHUB_USERNAME }}/quickkart-server:latest
+            ${{ secrets.DOCKERHUB_USERNAME }}/quickkart-server:${{ github.run_number }}
+
+      # ── SSH into EC2 and redeploy ────────────────────────────────────────
+      - name: 🚀 Deploy to EC2
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ec2-user
+          key: ${{ secrets.EC2_SSH_KEY }}
+          script: |
+            docker pull ${{ secrets.DOCKERHUB_USERNAME }}/quickkart-server:latest
+            docker stop quickkart-server 2>/dev/null || true
+            docker rm quickkart-server 2>/dev/null || true
+            docker run -d \
+              --name quickkart-server \
+              --restart unless-stopped \
+              -p 5000:5000 \
+              --env-file /opt/quickkart/.env.prod \
+              ${{ secrets.DOCKERHUB_USERNAME }}/quickkart-server:latest
+            docker image prune -f
+
+      # ── Health check ─────────────────────────────────────────────────────
+      - name: 🏥 Health check
+        run: |
+          echo "Waiting for server to start..."
+          sleep 15
+          for i in {1..6}; do
+            if curl -f -s http://${{ secrets.EC2_HOST }}:5000/api/health | grep -q "ok"; then
+              echo "✅ Health check passed!"
+              exit 0
+            fi
+            echo "Attempt $i failed, retrying in 10s..."
+            sleep 10
+          done
+          echo "❌ Health check failed"
+          exit 1

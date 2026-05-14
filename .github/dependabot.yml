@@ -1,0 +1,63 @@
+# Dependabot configuration for QuickKart
+# Automatically opens PRs when npm packages have known vulnerabilities
+# Runs weekly for all three apps (server, client, admin)
+# INT377 DevOps Project - DevSecOps Phase 9
+
+version: 2
+updates:
+  # ── Backend (Node.js/Express) ─────────────────────────────────────
+  - package-ecosystem: "npm"
+    directory: "/server"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+      timezone: "Asia/Kolkata"
+    labels:
+      - "dependencies"
+      - "security"
+      - "backend"
+    commit-message:
+      prefix: "fix"
+      include: "scope"
+    open-pull-requests-limit: 10
+    reviewers:
+      - "Ajajeet93"
+
+  # ── Customer Frontend (React/Vite) ────────────────────────────────
+  - package-ecosystem: "npm"
+    directory: "/client"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+      timezone: "Asia/Kolkata"
+    labels:
+      - "dependencies"
+      - "security"
+      - "frontend"
+    commit-message:
+      prefix: "fix"
+      include: "scope"
+    open-pull-requests-limit: 10
+    reviewers:
+      - "Ajajeet93"
+
+  # ── Admin Dashboard (React/Vite) ──────────────────────────────────
+  - package-ecosystem: "npm"
+    directory: "/admin"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+      timezone: "Asia/Kolkata"
+    labels:
+      - "dependencies"
+      - "security"
+      - "admin"
+    commit-message:
+      prefix: "fix"
+      include: "scope"
+    open-pull-requests-limit: 10
+    reviewers:
+      - "Ajajeet93"

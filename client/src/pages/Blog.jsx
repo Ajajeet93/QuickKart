@@ -8,19 +8,19 @@ const BLOG_POSTS = [
         title: "Top 10 Benefits of Organic Food for Your Health",
         excerpt: "Discover why switching to organic produce can boost your immune system and overall well-being. From fewer pesticides to more nutrients, learn the facts.",
         image: "https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&w=800&q=80",
-        author: "Sarah Johnson",
-        date: "Oct 24, 2024",
+        author: "Priya Sharma",
+        date: "May 02, 2026",
         category: "Health & Wellness",
         readTime: "5 min read",
         slug: "1" // Simplified for ID-based routing
     },
     {
         id: 2,
-        title: "Sustainability in 2024: Reducing Your Carbon Footprint",
+        title: "Sustainability in 2026: Reducing Your Carbon Footprint",
         excerpt: "Simple, actionable steps to make your grocery shopping more eco-friendly. Learn how local sourcing impacts the environment.",
         image: "https://images.unsplash.com/photo-1542601906990-b4d3fb778b09?auto=format&fit=crop&w=800&q=80",
-        author: "Michael Chen",
-        date: "Oct 20, 2024",
+        author: "Rahul Verma",
+        date: "April 28, 2026",
         category: "Sustainability",
         readTime: "4 min read",
         slug: "2"
@@ -30,11 +30,33 @@ const BLOG_POSTS = [
         title: "5 Quick & Easy Vegan Recipes for Busy Weeknights",
         excerpt: "Delicious plant-based meals that take less than 30 minutes to prepare. Perfect for anyone looking to eat healthier without spending hours in the kitchen.",
         image: "https://images.unsplash.com/photo-1512621776951-a57141f2eefd?auto=format&fit=crop&w=800&q=80",
-        author: "Emma Davis",
-        date: "Oct 15, 2024",
+        author: "Ananya Desai",
+        date: "April 15, 2026",
         category: "Recipes",
         readTime: "8 min read",
         slug: "3"
+    },
+    {
+        id: 4,
+        title: "The Rise of Farm-to-Table Dining in India",
+        excerpt: "Explore how local restaurants are partnering directly with farmers to bring fresh, seasonal ingredients to your plate.",
+        image: "https://images.unsplash.com/photo-1556910103-1c02745aae4d?auto=format&fit=crop&w=800&q=80",
+        author: "Vikram Singh",
+        date: "May 04, 2026",
+        category: "Health & Wellness",
+        readTime: "6 min read",
+        slug: "4"
+    },
+    {
+        id: 5,
+        title: "Zero-Waste Kitchen: Tips and Tricks",
+        excerpt: "Learn how to minimize food waste with creative cooking techniques and smart storage solutions for a sustainable kitchen.",
+        image: "https://images.unsplash.com/photo-1466692476868-aef1dfb1e735?auto=format&fit=crop&w=800&q=80",
+        author: "Neha Gupta",
+        date: "April 10, 2026",
+        category: "Sustainability",
+        readTime: "7 min read",
+        slug: "5"
     }
 ];
 

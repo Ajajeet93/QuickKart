@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import API_URL from '../config';
-
 const CategoriesPage = () => {
     const [categories, setCategories] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -8,7 +8,7 @@ const CategoriesPage = () => {
     useEffect(() => {
         const fetchCategories = async () => {
             try {
-                const res = await fetch(`${API_URL}/api/categories`);
+                const res = await fetch(`${API_URL}/api/v1/categories`);
                 const data = await res.json();
                 setCategories(data);
             } catch (error) {
@@ -37,7 +37,7 @@ const CategoriesPage = () => {
                             <div className="text-6xl mb-6 filter drop-shadow-md transform group-hover:scale-110 transition-transform">{cat.icon}</div>
                             <h3 className="text-2xl font-bold text-gray-800 mb-2">{cat.name}</h3>
                             <span className="text-sm font-semibold opacity-70 group-hover:opacity-100 transition-opacity">Browse Products &rarr;</span>
-                            <a href={`/category/${cat.name.toLowerCase()}`} className="absolute inset-0 z-10" aria-label={`Browse ${cat.name}`}></a>
+                            <Link to={`/products?categoryId=${cat._id}`} className="absolute inset-0 z-10" aria-label={`Browse ${cat.name}`}></Link>
                         </div>
                     ))}
                 </div>

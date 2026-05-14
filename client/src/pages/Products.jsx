@@ -1,7 +1,6 @@
 import React, { useEffect, useState, useCallback, useMemo } from 'react';
-import { useDispatch, useSelector } from 'react-redux';
 import { useSearchParams, Link } from 'react-router-dom';
-import { fetchProducts } from '../store/productSlice';
+import { useProducts } from '../hooks/useProducts';
 import ProductCard from '../components/ProductCard'; // RESTORED
 import ProductSkeleton from '../components/ProductSkeleton';
 import { ShoppingBag } from 'lucide-react';
@@ -9,38 +8,30 @@ import API_URL from '../config';
 // import { addToCart } from '../store/cartSlice'; // Kept commented out for now
 
 const Products = () => {
-    const dispatch = useDispatch();
     const [searchParams, setSearchParams] = useSearchParams();
     const categoryId = searchParams.get('categoryId');
     const categoryName = searchParams.get('category');
     const searchQuery = searchParams.get('search');
+    const [currentPage, setCurrentPage] = useState(1);
 
-    // Access Redux state
-    const { items: products, loading, error, hasMore, page, total } = useSelector((state) => state.products);
+    // Use custom hook
+    const { products, loading, error, hasMore, page } = useProducts(categoryId || categoryName, searchQuery, currentPage);
     const [categories, setCategories] = useState([]);
 
     // Local sort state
     const [sortOption, setSortOption] = useState('recommended');
     const [isSortOpen, setIsSortOpen] = useState(false);
 
-    // Initial load and filter change
+    // Reset page when filters change
     useEffect(() => {
-        // Reset to page 1 when filters change
-        dispatch(fetchProducts({ categoryId, category: categoryName, search: searchQuery, page: 1, limit: 12 }));
-    }, [dispatch, categoryId, categoryName, searchQuery]);
+        setCurrentPage(1);
+    }, [categoryId, categoryName, searchQuery]);
 
-    // Optimize Load More
     const handleLoadMore = useCallback(() => {
         if (!loading && hasMore) {
-            dispatch(fetchProducts({
-                categoryId,
-                category: categoryName,
-                search: searchQuery,
-                page: page + 1,
-                limit: 12
-            }));
+            setCurrentPage(prev => prev + 1);
         }
-    }, [dispatch, loading, hasMore, categoryId, categoryName, searchQuery, page]);
+    }, [loading, hasMore]);
 
     // Memoize Sorting Logic
     const filteredProducts = useMemo(() => {
@@ -76,7 +67,7 @@ const Products = () => {
         const fetchCats = async () => {
             try {
                 // Determine API URL based on environment or default
-                const url = `${API_URL}/api/categories`;
+                const url = `${API_URL}/api/v1/categories`;
                 const res = await fetch(url);
                 const data = await res.json();
                 setCategories(data);

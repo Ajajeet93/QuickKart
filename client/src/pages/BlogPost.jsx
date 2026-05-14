@@ -1,6 +1,7 @@
 import React from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { Calendar, User, Clock, ChevronLeft, Facebook, Twitter, Linkedin, Share2 } from 'lucide-react';
+import DOMPurify from 'dompurify';
 
 // Reusing mock data directly for simplicity (in real app, fetch from ID)
 const BLOG_DATA = {
@@ -116,7 +117,7 @@ const BlogPost = () => {
 
                 <div
                     className="prose prose-lg prose-green max-w-none text-gray-600 leading-relaxed"
-                    dangerouslySetInnerHTML={{ __html: post.content }}
+                    dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(post.content) }}
                 />
 
                 {/* Tag Cloud & Bottom Share */}

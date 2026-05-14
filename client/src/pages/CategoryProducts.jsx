@@ -8,20 +8,26 @@ const CategoryProducts = () => {
     const [products, setProducts] = useState([]);
     const [loading, setLoading] = useState(true);
     const [categoryName, setCategoryName] = useState('');
+    const [error, setError] = useState(null);
 
     useEffect(() => {
         const fetchProducts = async () => {
             setLoading(true);
+            setError(null);
             try {
-                // Fetch products by category slug/name
-                const res = await fetch(`${API_URL}/api/products?category=${slug}`);
+                // Use ?category= (name-based, case-insensitive regex on server)
+                const res = await fetch(`${API_URL}/api/v1/products?category=${encodeURIComponent(slug)}&limit=50`);
+                if (!res.ok) {
+                    const errData = await res.json().catch(() => ({}));
+                    throw new Error(errData.message || `HTTP ${res.status}`);
+                }
                 const data = await res.json();
-                setProducts(data);
-
-                // Capitalize slug for display title if we don't have category details handy
+                // API returns { products: [...], total, page, pages }
+                setProducts(Array.isArray(data) ? data : (data.products || []));
                 setCategoryName(slug.charAt(0).toUpperCase() + slug.slice(1));
-            } catch (error) {
-                console.error('Error fetching products:', error);
+            } catch (err) {
+                console.error('Error fetching products:', err);
+                setError(err.message);
             } finally {
                 setLoading(false);
             }
@@ -42,7 +48,12 @@ const CategoryProducts = () => {
                     <p className="text-gray-500 mt-2">Showing {products.length} results</p>
                 </div>
 
-                {loading ? (
+                {error ? (
+                    <div className="py-20 text-center text-red-500">
+                        <p className="font-bold">Failed to load products: {error}</p>
+                        <Link to="/categories" className="mt-4 inline-block text-primary font-bold hover:underline">← Back to Categories</Link>
+                    </div>
+                ) : loading ? (
                     <div className="py-20 text-center text-gray-400">Loading products...</div>
                 ) : products.length > 0 ? (
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">

@@ -1,0 +1,36 @@
+#!/bin/sh
+# Husky pre-commit hook — runs ESLint before every commit
+# If ESLint finds errors, the commit is REJECTED
+# INT377 DevOps Project - Phase 1: Git Workflow
+
+echo "🔍 Running ESLint pre-commit check..."
+
+# Run ESLint on the server (Node.js)
+echo "→ Checking server..."
+cd server && npx eslint . --ext .js --max-warnings=0 2>/dev/null
+SERVER_EXIT=$?
+cd ..
+
+# Run ESLint on the client (React)
+echo "→ Checking client..."
+cd client && npx eslint . --ext .js,.jsx --max-warnings=0 2>/dev/null
+CLIENT_EXIT=$?
+cd ..
+
+# Run ESLint on the admin (React)
+echo "→ Checking admin..."
+cd admin && npx eslint . --ext .js,.jsx --max-warnings=0 2>/dev/null
+ADMIN_EXIT=$?
+cd ..
+
+# If any ESLint check failed, abort the commit
+if [ $SERVER_EXIT -ne 0 ] || [ $CLIENT_EXIT -ne 0 ] || [ $ADMIN_EXIT -ne 0 ]; then
+    echo ""
+    echo "❌ ESLint errors found. Please fix them before committing."
+    echo "   Run: npm run lint (in server/, client/, or admin/)"
+    echo "   To bypass (emergencies only): git commit --no-verify"
+    exit 1
+fi
+
+echo "✅ ESLint passed. Proceeding with commit."
+exit 0

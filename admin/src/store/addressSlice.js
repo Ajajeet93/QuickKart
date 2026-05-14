@@ -7,7 +7,7 @@ export const fetchAddresses = createAsyncThunk(
     'addresses/fetchAddresses',
     async (_, { rejectWithValue }) => {
         try {
-            const response = await fetch(`${API_URL}/api/user/addresses`, {
+            const response = await fetch(`${API_URL}/api/v1/user/addresses`, {
                 method: 'GET',
                 headers: { 'Content-Type': 'application/json' },
                 credentials: 'include'
@@ -30,7 +30,7 @@ export const addNewAddress = createAsyncThunk(
     'addresses/addNewAddress',
     async (addressData, { rejectWithValue }) => {
         try {
-            const response = await fetch(`${API_URL}/api/user/addresses`, {
+            const response = await fetch(`${API_URL}/api/v1/user/addresses`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 credentials: 'include',
@@ -54,7 +54,7 @@ export const updateAddress = createAsyncThunk(
     'addresses/updateAddress',
     async ({ id, addressData }, { rejectWithValue }) => {
         try {
-            const response = await fetch(`${API_URL}/api/user/addresses/${id}`, {
+            const response = await fetch(`${API_URL}/api/v1/user/addresses/${id}`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
                 credentials: 'include',
@@ -78,7 +78,7 @@ export const deleteAddress = createAsyncThunk(
     'addresses/deleteAddress',
     async (id, { rejectWithValue }) => {
         try {
-            const response = await fetch(`${API_URL}/api/user/addresses/${id}`, {
+            const response = await fetch(`${API_URL}/api/v1/user/addresses/${id}`, {
                 method: 'DELETE',
                 credentials: 'include'
             });

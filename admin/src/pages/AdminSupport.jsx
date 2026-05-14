@@ -14,12 +14,14 @@ const AdminSupport = () => {
 
     useEffect(() => {
         fetchRequests();
+        const interval = setInterval(() => fetchRequests(), 30_000); // auto-refresh every 30s
+        return () => clearInterval(interval);
     }, []);
 
     const fetchRequests = async () => {
         try {
-            const res = await api.get('/api/admin/support');
-            setRequests(res.data);
+            const res = await api.get('/api/v1/admin/support');
+            setRequests(res.data.data || []);
             setLoading(false);
         } catch (error) {
             console.error('Error fetching support requests:', error);
@@ -30,7 +32,7 @@ const AdminSupport = () => {
     const handleStatusUpdate = async (id, status) => {
         setProcessingId(id);
         try {
-            await api.put(`/api/admin/support/${id}/status`, {
+            await api.put(`/api/v1/admin/support/${id}/status`, {
                 status,
                 adminResponse: adminNote || (status === 'Approved' ? 'Your request has been approved.' : 'Your request has been rejected.')
             });

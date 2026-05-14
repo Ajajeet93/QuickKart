@@ -1,39 +1,33 @@
-import React, { useEffect } from 'react';
-import { useDispatch, useSelector } from 'react-redux';
-import { fetchProducts } from '../store/productSlice';
+import React, { useEffect, useState } from 'react';
+import { useProducts } from '../hooks/useProducts';
 import ProductCard from '../components/ProductCard';
 import Footer from '../components/Footer';
 import { ChevronRight, Filter, ChevronDown, Sparkles, Clock, ArrowRight, Apple, Carrot, Cherry } from 'lucide-react';
 import { useSearchParams, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
+import API_URL from '../config';
 
 const Home = () => {
-    const dispatch = useDispatch();
-    const { items, loading, error } = useSelector((state) => state.products);
     const [searchParams] = useSearchParams();
-    const categoryFilter = searchParams.get('category');
+    // Support both ?categoryId= (ObjectId) and ?category= (name) from URL
+    const categoryId   = searchParams.get('categoryId');
+    const categoryName = searchParams.get('category');
+    const categoryFilter = categoryId || categoryName;   // hook handles the distinction
     const searchTerm = searchParams.get('search');
 
+    const { loading, error, filterProducts } = useProducts(categoryFilter);
+
+    // Fetch real categories from API (so we have real _ids for links)
+    const [categories, setCategories] = useState([]);
     useEffect(() => {
-        dispatch(fetchProducts(categoryFilter));
-    }, [dispatch, categoryFilter]);
+        fetch(`${API_URL}/api/v1/categories`)
+            .then(r => r.json())
+            .then(data => { if (Array.isArray(data)) setCategories(data); })
+            .catch(() => {});
+    }, []);
 
-    const categories = [
-        { id: 'vegetables', name: 'Vegetables', img: 'https://cdn-icons-png.flaticon.com/512/2329/2329903.png', color: 'bg-green-100' },
-        { id: 'fruits', name: 'Fruits', img: 'https://cdn-icons-png.flaticon.com/512/1625/1625048.png', color: 'bg-red-100' },
-        { id: 'dairy', name: 'Dairy', img: 'https://cdn-icons-png.flaticon.com/512/869/869664.png', color: 'bg-blue-100' },
-        { id: 'meat', name: 'Meat', img: 'https://cdn-icons-png.flaticon.com/512/1046/1046769.png', color: 'bg-orange-100' },
-        { id: 'bakery', name: 'Bakery', img: 'https://cdn-icons-png.flaticon.com/512/992/992747.png', color: 'bg-yellow-100' },
-        { id: 'beverages', name: 'Beverages', img: 'https://cdn-icons-png.flaticon.com/512/2405/2405479.png', color: 'bg-purple-100' },
-        { id: 'snacks', name: 'Snacks', img: 'https://cdn-icons-png.flaticon.com/512/2553/2553691.png', color: 'bg-pink-100' },
-        { id: 'instant-food', name: 'Instant Food', img: 'https://cdn-icons-png.flaticon.com/512/3480/3480823.png', color: 'bg-indigo-100' },
-        { id: 'personal-care', name: 'Personal Care', img: 'https://cdn-icons-png.flaticon.com/512/2640/2640523.png', color: 'bg-teal-100' },
-        { id: 'household', name: 'Household', img: 'https://cdn-icons-png.flaticon.com/512/3082/3082060.png', color: 'bg-gray-100' },
-    ];
+    const filteredItems = filterProducts(searchTerm);
 
-    const filteredItems = searchTerm
-        ? items.filter(item => item.name.toLowerCase().includes(searchTerm.toLowerCase()))
-        : categoryFilter ? items.filter(item => item.category === categoryFilter) : items;
 
     if (loading) return <div className="min-h-screen pt-32 flex justify-center"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div></div>;
     if (error) return <div className="min-h-screen pt-32 text-center text-red-500">Error: {error}</div>;
@@ -202,12 +196,14 @@ const Home = () => {
                         </Link>
 
                         {categories.map((cat) => (
-                            <Link to={`/products?category=${cat.name}`} key={cat.id} className="flex flex-col items-center gap-3 cursor-pointer group">
+                            <Link to={`/products?categoryId=${cat._id}`} key={cat._id} className="flex flex-col items-center gap-3 cursor-pointer group">
                                 <motion.div variants={itemVariants}>
                                     <div className={`w-24 h-24 md:w-32 md:h-32 ${cat.color} rounded-[2rem] flex items-center justify-center transition-all group-hover:scale-105 shadow-sm border border-transparent group-hover:border-primary/20`}>
                                         <div className="w-12 h-12 md:w-16 md:h-16 flex items-center justify-center text-3xl">
-                                            {/* Using emoji as fallback if img fails, or just img if available */}
-                                            <img src={cat.img} alt={cat.name} className="w-full h-full object-contain drop-shadow-sm" />
+                                            {cat.image
+                                                ? <img src={cat.image} alt={cat.name} className="w-full h-full object-contain drop-shadow-sm" />
+                                                : <span role="img" aria-label={cat.name}>{cat.icon}</span>
+                                            }
                                         </div>
                                     </div>
                                     <span className="font-bold text-gray-800 text-xs md:text-sm mt-3 block text-center">{cat.name}</span>

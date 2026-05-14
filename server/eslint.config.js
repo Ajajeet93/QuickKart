@@ -1,7 +1,7 @@
-import js from "@eslint/js";
-import security from "eslint-plugin-security";
+const js = require("@eslint/js");
+const security = require("eslint-plugin-security");
 
-export default [
+module.exports = [
     js.configs.recommended,
     security.configs.recommended,
     {
@@ -12,17 +12,17 @@ export default [
         },
         rules: {
             // ── Security Rules (eslint-plugin-security) ──────────────────
-            "security/detect-object-injection": "warn",           // Prevent prototype pollution
-            "security/detect-non-literal-regexp": "warn",         // Prevent ReDoS
-            "security/detect-unsafe-regex": "error",              // Catch catastrophic backtracking
-            "security/detect-buffer-noassert": "error",           // Buffer safety
-            "security/detect-child-process": "warn",              // child_process usage
+            "security/detect-object-injection": "warn",
+            "security/detect-non-literal-regexp": "warn",
+            "security/detect-unsafe-regex": "error",
+            "security/detect-buffer-noassert": "error",
+            "security/detect-child-process": "warn",
             "security/detect-disable-mustache-escape": "error",
-            "security/detect-eval-with-expression": "error",      // No eval()
+            "security/detect-eval-with-expression": "error",
             "security/detect-new-buffer": "error",
             "security/detect-no-csrf-before-method-override": "error",
-            "security/detect-non-literal-fs-filename": "warn",    // Dynamic file paths
-            "security/detect-non-literal-require": "warn",        // Dynamic requires
+            "security/detect-non-literal-fs-filename": "warn",
+            "security/detect-non-literal-require": "warn",
             "security/detect-possible-timing-attacks": "warn",
             "security/detect-pseudoRandomBytes": "error",
 

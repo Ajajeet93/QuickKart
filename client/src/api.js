@@ -25,7 +25,7 @@ const processQueue = (error) => {
 /**
  * Flow when access token is expired:
  * 1. Any request → 401
- * 2. Interceptor → POST /api/auth/refresh (sends refresh_token cookie automatically)
+ * 2. Interceptor → POST /api/v1/auth/refresh (sends refresh_token cookie automatically)
  * 3. Server verifies refresh token against DB → issues new access_token cookie
  * 4. Interceptor retries the original request
  * 5. If refresh also fails (token revoked/expired) → dispatch logoutUser()
@@ -39,7 +39,7 @@ api.interceptors.response.use(
 
         // Only intercept 401s that aren't already retried
         // and aren't from the refresh / logout endpoints themselves
-        const isRefreshUrl  = originalRequest.url?.includes('/api/auth/refresh');
+        const isRefreshUrl  = originalRequest.url?.includes('/api/v1/auth/refresh');
         const isLogoutUrl   = originalRequest.url?.includes('/logout');
 
         if (
@@ -62,7 +62,7 @@ api.interceptors.response.use(
 
             try {
                 // Ask server to issue a new access_token using the refresh_token cookie
-                await api.post('/api/auth/refresh');
+                await api.post('/api/v1/auth/refresh');
 
                 processQueue(null);
                 isRefreshing = false;

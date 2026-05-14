@@ -96,7 +96,7 @@ const CreateSubscription = () => {
                 forceMerge: forceMerge
             };
 
-            const response = await fetch(`${API_URL}/api/subscriptions`, {
+            const response = await fetch(`${API_URL}/api/v1/subscriptions`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',

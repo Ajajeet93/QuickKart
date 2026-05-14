@@ -1,22 +1,13 @@
 import React from 'react';
-import { useSelector, useDispatch } from 'react-redux';
+import { useSelector } from 'react-redux';
 import { Link, useNavigate } from 'react-router-dom';
 import { Minus, Plus, Trash2, ArrowRight, ArrowLeft } from 'lucide-react';
-import { removeFromCartAsync, updateQuantityAsync } from '../store/cartSlice';
+import { useCart } from '../hooks/useCart';
 
 const Cart = () => {
-    const { items, totalAmount, totalQuantity } = useSelector((state) => state.cart);
+    const { items, totalAmount, totalQuantity, updateQuantity, removeItem } = useCart();
     const { user } = useSelector((state) => state.auth);
-    const dispatch = useDispatch();
     const navigate = useNavigate();
-
-    const handleQuantity = (id, newQty, weight) => {
-        dispatch(updateQuantityAsync({ id, quantity: newQty, weight }));
-    };
-
-    const handleRemove = (id, weight) => {
-        dispatch(removeFromCartAsync({ id, weight }));
-    };
 
     const handleCheckout = () => {
         if (!user) {
@@ -76,7 +67,7 @@ const Cart = () => {
                                 {/* Quantity Controls */}
                                 <div className="flex items-center bg-gray-100 rounded-lg p-1">
                                     <button
-                                        onClick={() => handleQuantity(item._id, item.quantity - 1, item.variant?.weight)}
+                                        onClick={() => updateQuantity(item._id, item.quantity - 1, item.variant?.weight)}
                                         className="w-8 h-8 flex items-center justify-center bg-white rounded-md shadow-sm hover:text-red-500 transition disabled:opacity-50"
                                         disabled={item.quantity <= 1}
                                     >
@@ -84,7 +75,7 @@ const Cart = () => {
                                     </button>
                                     <span className="w-8 text-center font-bold text-sm">{item.quantity}</span>
                                     <button
-                                        onClick={() => handleQuantity(item._id, item.quantity + 1, item.variant?.weight)}
+                                        onClick={() => updateQuantity(item._id, item.quantity + 1, item.variant?.weight)}
                                         className="w-8 h-8 flex items-center justify-center bg-white rounded-md shadow-sm hover:text-green-600 transition"
                                     >
                                         <Plus size={16} />
@@ -92,7 +83,7 @@ const Cart = () => {
                                 </div>
 
                                 <button
-                                    onClick={() => handleRemove(item._id, item.variant?.weight)}
+                                    onClick={() => removeItem(item._id, item.variant?.weight)}
                                     className="p-2 text-gray-400 hover:text-red-500 transition"
                                 >
                                     <Trash2 size={20} />

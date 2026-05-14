@@ -69,15 +69,15 @@ const Checkout = () => {
     // Fetch Saved Cards
     const fetchCards = async () => {
         try {
-            const res = await fetch(`${API_URL}/api/wallet/cards`, {
+            const res = await fetch(`${API_URL}/api/v1/wallet/cards`, {
                 credentials: 'include'
             });
             if (res.ok) {
                 const data = await res.json();
-                setCards(data);
-                // Don't auto-select here to avoid overriding user choice if they are just adding a card
-                // But if it's the first card, maybe auto select?
-                if (data.length > 0 && !selectedCard) setSelectedCard(data[0]._id);
+                // Response is { success, message, data: [...] } via apiResponse.success()
+                const cardList = data.data || [];
+                setCards(cardList);
+                if (cardList.length > 0 && !selectedCard) setSelectedCard(cardList[0]._id);
             }
         } catch (err) {
             console.error("Failed to fetch cards", err);
@@ -99,17 +99,14 @@ const Checkout = () => {
         setLoading(true);
 
         try {
-            // Construct Payment Method String for Backend
+            // Map client payment method IDs to server-accepted enum values
             let effectivePaymentMethod = 'Credit Card'; // Default fallback
             if (paymentMethod === 'wallet') effectivePaymentMethod = 'Wallet';
-            else if (paymentMethod === 'upi') effectivePaymentMethod = `UPI (${upiVpa})`;
+            else if (paymentMethod === 'upi') effectivePaymentMethod = 'Credit Card'; // UPI mapped to Credit Card (no dedicated enum on server)
             else if (paymentMethod === 'cod') effectivePaymentMethod = 'Cash on Delivery';
-            else if (paymentMethod === 'card') {
-                const card = cards.find(c => c._id === selectedCard);
-                effectivePaymentMethod = card ? `Card ending ${card.last4}` : 'Credit Card';
-            }
+            else if (paymentMethod === 'card') effectivePaymentMethod = 'Credit Card';
 
-            let url = `${API_URL}/api/orders`;
+            let url = `${API_URL}/api/v1/orders`;
             let body = {
                 items: items.map(i => ({ product: i._id, quantity: i.quantity, price: i.price })),
                 totalAmount: finalTotal,
@@ -118,14 +115,14 @@ const Checkout = () => {
             };
 
             if (isSubscription) {
-                url = `${API_URL}/api/subscriptions`;
+                url = `${API_URL}/api/v1/subscriptions`;
                 body = {
                     items: items.map(i => ({ product: i._id, quantity: i.quantity })),
                     frequency,
                     deliveryAddressId: selectedAddress,
                     startDate: startDate || new Date().toISOString().split('T')[0],
                     forceMerge,
-                    paymentMethod: effectivePaymentMethod
+                    paymentMethod: 'Wallet' // Subscriptions always use Wallet
                 };
             }
 
@@ -146,7 +143,10 @@ const Checkout = () => {
 
             if (response.ok) {
                 dispatch(loadUser());
-                const orderId = isSubscription ? data.orderId : data._id;
+                // For subscription: data.data.subscription._id; for order: data.data.order._id
+                const orderId = isSubscription
+                    ? data.data?.subscription?._id
+                    : data.data?.order?._id || data.data?._id;
                 const typeParam = isSubscription ? '&type=subscription' : '';
                 navigate(`/payment-success?orderId=${orderId}${typeParam}`);
             } else {

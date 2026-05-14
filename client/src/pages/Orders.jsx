@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import API_URL from '../config';
+import api from '../api';
 import { Package, Calendar, ChevronRight, CheckCircle, XCircle, Clock, RefreshCw } from 'lucide-react';
 import LoadingSpinner from '../components/LoadingSpinner';
 
@@ -12,21 +12,10 @@ const Orders = () => {
     useEffect(() => {
         const fetchOrders = async () => {
             try {
-                // Don't set loading on poll updates to prevent flashing
-                // Only if it's the very first load and we have no data
-                const response = await fetch(`${API_URL}/api/orders/my`, {
-                    credentials: 'include',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    }
-                });
-
-                if (!response.ok) throw new Error('Failed to fetch orders');
-
-                const data = await response.json();
-                setOrders(data);
+                const response = await api.get('/api/v1/orders/my');
+                setOrders(response.data?.data || []);
             } catch (err) {
-                setError(err.message);
+                setError(err.response?.data?.message || err.message);
             } finally {
                 setLoading(false);
             }

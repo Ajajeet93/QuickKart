@@ -41,19 +41,23 @@ const SubscriptionDetails = () => {
         const fetchSub = async () => {
             try {
                 // Fetch Subscription
-                const res = await fetch(`${API_URL}/api/subscriptions/${id}`, {
+                const res = await fetch(`${API_URL}/api/v1/subscriptions/${id}`, {
                     credentials: 'include',
                     cache: 'no-store'
                 });
                 if (!res.ok) throw new Error('Failed to load sub');
-                const data = await res.json();
+                const json = await res.json();
+                // Unwrap standard API response wrapper if present
+                const data = json?.data ?? json;
 
                 // Fetch Addresses Independently (Robustness Fix)
-                const addrRes = await fetch(`${API_URL}/api/user/addresses`, {
+                const addrRes = await fetch(`${API_URL}/api/v1/user/addresses`, {
                     credentials: 'include',
                     cache: 'no-store'
                 });
-                const addressData = addrRes.ok ? await addrRes.json() : [];
+                const addrJson = addrRes.ok ? await addrRes.json() : [];
+                // Unwrap address data from API wrapper if present
+                const addressData = Array.isArray(addrJson) ? addrJson : (Array.isArray(addrJson?.data) ? addrJson.data : []);
 
                 // Merge/Override addressList
                 data.addressList = addressData;
@@ -71,13 +75,15 @@ const SubscriptionDetails = () => {
     const handleUpdate = async (updates) => {
         setUpdating(true);
         try {
-            const res = await fetch(`${API_URL}/api/subscriptions/${id}`, {
+            const res = await fetch(`${API_URL}/api/v1/subscriptions/${id}`, {
                 method: 'PATCH',
                 headers: { 'Content-Type': 'application/json' },
                 credentials: 'include',
                 body: JSON.stringify(updates)
             });
-            const updated = await res.json();
+            const json = await res.json();
+            // Unwrap standard API response wrapper if present
+            const updated = json?.data ?? json;
             setSub(updated);
             // setQuantity will be updated by the useEffect above
             if (updates.status !== 'Cancelled') {

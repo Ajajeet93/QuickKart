@@ -27,7 +27,7 @@ const Profile = () => {
         e.preventDefault();
         setUpdateLoading(true);
         try {
-            const res = await fetch(`${API_URL}/api/auth/profile`, {
+            const res = await fetch(`${API_URL}/api/v1/auth/profile`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
                 credentials: 'include',
@@ -36,7 +36,7 @@ const Profile = () => {
             const data = await res.json();
             if (res.ok) {
                 // 1. Update local state immediately for responsiveness
-                setUser(data.user);
+                setUser(data.data);
                 setIsEditing(false);
 
                 // 2. Sync Redux global state
@@ -61,30 +61,32 @@ const Profile = () => {
     const fetchUserData = async () => {
         try {
             // Fetch User Details from DB
-            const userRes = await fetch(`${API_URL}/api/auth/me`, {
+            const userRes = await fetch(`${API_URL}/api/v1/auth/me`, {
                 credentials: 'include'
             });
             if (userRes.ok) {
                 const userData = await userRes.json();
-                setUser(userData);
+                setUser(userData.data);
             }
 
             // Fetch Recent Orders
-            const ordersRes = await fetch(`${API_URL}/api/orders/my`, {
+            const ordersRes = await fetch(`${API_URL}/api/v1/orders/my`, {
                 credentials: 'include'
             });
             if (ordersRes.ok) {
                 const ordersData = await ordersRes.json();
-                setOrders(ordersData);
+                setOrders(ordersData.data || []);
             }
 
             // Fetch Active Subscriptions
-            const subRes = await fetch(`${API_URL}/api/subscriptions`, {
+            const subRes = await fetch(`${API_URL}/api/v1/subscriptions`, {
                 credentials: 'include'
             });
             if (subRes.ok) {
                 const subData = await subRes.json();
-                setSubscriptions(subData);
+                // Backend returns raw array (not wrapped), handle both cases defensively
+                const subs = Array.isArray(subData) ? subData : (Array.isArray(subData?.data) ? subData.data : []);
+                setSubscriptions(subs);
             }
         } catch (error) {
             console.error('Error loading profile data:', error);

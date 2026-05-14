@@ -34,7 +34,7 @@ const CardModal = ({ isOpen, onClose, onSuccess }) => {
                 cardHolder: cardForm.name
             };
 
-            const res = await fetch(`${API_URL}/api/wallet/cards`, {
+            const res = await fetch(`${API_URL}/api/v1/wallet/cards`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 credentials: 'include',

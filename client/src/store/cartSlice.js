@@ -7,10 +7,22 @@ export const fetchCart = createAsyncThunk(
     'cart/fetchCart',
     async (_, { rejectWithValue }) => {
         try {
-            const response = await api.get('/api/cart');
+            const response = await api.get('/api/v1/cart');
             return response.data;
         } catch (err) {
             return rejectWithValue(err.response?.data?.message || err.message);
+        }
+    }
+);
+
+export const clearCartAsync = createAsyncThunk(
+    'cart/clearCartAsync',
+    async (_, { rejectWithValue }) => {
+        try {
+            await api.delete('/api/v1/cart/clear');
+        } catch (err) {
+            // Non-critical: still clear locally even if backend fails
+            console.warn('Cart clear on server failed:', err.message);
         }
     }
 );
@@ -24,7 +36,7 @@ export const addToCartAsync = createAsyncThunk(
                 return { local: true, item }; // Signal to use local logic
             }
 
-            const response = await api.post('/api/cart/add', {
+            const response = await api.post('/api/v1/cart/add', {
                 productId: item._id,
                 quantity: item.quantity || 1,
                 variant: item.variant // Pass variant (weight, price)
@@ -43,7 +55,7 @@ export const updateQuantityAsync = createAsyncThunk(
             const { user } = getState().auth;
             if (!user) return { local: true, id, quantity, weight };
 
-            const response = await api.put('/api/cart/update', { productId: id, quantity, weight });
+            const response = await api.put('/api/v1/cart/update', { productId: id, quantity, weight });
             return response.data;
         } catch (err) {
             return rejectWithValue(err.response?.data?.message || err.message);
@@ -58,7 +70,7 @@ export const removeFromCartAsync = createAsyncThunk(
             const { user } = getState().auth;
             if (!user) return { local: true, id, weight };
 
-            const response = await api.delete(`/api/cart/${id}?weight=${weight}`);
+            const response = await api.delete(`/api/v1/cart/${id}?weight=${weight}`);
             return response.data;
         } catch (err) {
             return rejectWithValue(err.response?.data?.message || err.message);
@@ -275,7 +287,15 @@ const cartSlice = createSlice({
                     }
                 }
                 calculateTotals(state);
+            })
+            // Clear Cart (after order checkout — also clears backend)
+            .addCase(clearCartAsync.fulfilled, (state) => {
+                state.items = [];
+                state.totalQuantity = 0;
+                state.totalAmount = 0;
+                localStorage.removeItem('cartItems');
             });
+
     },
 });
 

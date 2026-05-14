@@ -4,8 +4,8 @@ import api from '../api';
 // ── Register ───────────────────────────────────────────────────────
 export const registerUser = createAsyncThunk('auth/registerUser', async (userData, { rejectWithValue }) => {
     try {
-        const response = await api.post('/api/auth/register', userData);
-        return response.data.user;
+        const response = await api.post('/api/v1/auth/register', userData);
+        return response.data.data;
     } catch (error) {
         return rejectWithValue(error.response?.data?.message || 'Registration failed');
     }
@@ -14,8 +14,8 @@ export const registerUser = createAsyncThunk('auth/registerUser', async (userDat
 // ── Login ──────────────────────────────────────────────────────────
 export const loginUser = createAsyncThunk('auth/loginUser', async (credentials, { rejectWithValue }) => {
     try {
-        const response = await api.post('/api/auth/login', credentials);
-        return response.data.user;
+        const response = await api.post('/api/v1/auth/login', credentials);
+        return response.data.data;
     } catch (error) {
         return rejectWithValue(error.response?.data?.message || 'Login failed');
     }
@@ -24,18 +24,18 @@ export const loginUser = createAsyncThunk('auth/loginUser', async (credentials, 
 // ── Google Login ───────────────────────────────────────────────────
 export const googleLogin = createAsyncThunk('auth/googleLogin', async (credential, { rejectWithValue }) => {
     try {
-        const response = await api.post('/api/auth/google', { credential });
-        return response.data.user;
+        const response = await api.post('/api/v1/auth/google', { credential });
+        return response.data.data;
     } catch (error) {
         return rejectWithValue(error.response?.data?.message || 'Google Login failed');
     }
 });
 
 // ── Logout ─────────────────────────────────────────────────────────
-// Calls POST /api/auth/logout → server deletes refresh token from DB + clears both cookies
+// Calls POST /api/v1/auth/logout → server deletes refresh token from DB + clears both cookies
 export const logoutUser = createAsyncThunk('auth/logoutUser', async (_, { rejectWithValue }) => {
     try {
-        await api.post('/api/auth/logout');
+        await api.post('/api/v1/auth/logout');
     } catch (error) {
         console.error('Logout error', error);
     }
@@ -45,8 +45,8 @@ export const logoutUser = createAsyncThunk('auth/logoutUser', async (_, { reject
 // The Axios interceptor will silently refresh the access token if expired.
 export const loadUser = createAsyncThunk('auth/loadUser', async (_, { rejectWithValue }) => {
     try {
-        const response = await api.get('/api/auth/me');
-        return response.data;
+        const response = await api.get('/api/v1/auth/me');
+        return response.data.data;
     } catch (error) {
         return rejectWithValue(error.response?.data?.message || 'Not authenticated');
     }

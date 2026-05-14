@@ -7,7 +7,7 @@ export const fetchCart = createAsyncThunk(
     'cart/fetchCart',
     async (_, { rejectWithValue }) => {
         try {
-            const res = await fetch(`${API_URL}/api/cart`, { credentials: 'include' });
+            const res = await fetch(`${API_URL}/api/v1/cart`, { credentials: 'include' });
             if (!res.ok) throw new Error('Failed to fetch cart');
             return await res.json();
         } catch (err) {
@@ -25,7 +25,7 @@ export const addToCartAsync = createAsyncThunk(
                 return { local: true, item }; // Signal to use local logic
             }
 
-            const res = await fetch(`${API_URL}/api/cart/add`, {
+            const res = await fetch(`${API_URL}/api/v1/cart/add`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 credentials: 'include',
@@ -50,7 +50,7 @@ export const updateQuantityAsync = createAsyncThunk(
             const { user } = getState().auth;
             if (!user) return { local: true, id, quantity, weight };
 
-            const res = await fetch(`${API_URL}/api/cart/update`, {
+            const res = await fetch(`${API_URL}/api/v1/cart/update`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
                 credentials: 'include',
@@ -71,7 +71,7 @@ export const removeFromCartAsync = createAsyncThunk(
             const { user } = getState().auth;
             if (!user) return { local: true, id, weight };
 
-            const res = await fetch(`${API_URL}/api/cart/${id}?weight=${weight}`, {
+            const res = await fetch(`${API_URL}/api/v1/cart/${id}?weight=${weight}`, {
                 method: 'DELETE',
                 credentials: 'include'
             });

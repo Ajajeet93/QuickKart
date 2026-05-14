@@ -1,5 +1,5 @@
 const mongoose = require('mongoose');
-const User = require('../models/User');
+const User = require('../src/models/User');
 const bcrypt = require('bcryptjs');
 const path = require('path');
 require('dotenv').config({ path: path.join(__dirname, '../.env') });
@@ -9,15 +9,20 @@ const createSpecificAdmin = async () => {
         await mongoose.connect(process.env.MONGODB_URI);
         console.log('Connected to MongoDB');
 
-        const email = 'quickcartadmin@gmail.com';
-        const plainPassword = 'Admin@9305';
-        const name = 'QuickCart Admin';
+        const email = 'admin@quickkart.com';
+        const plainPassword = 'Admin@123';
+        const name = 'QuickKart Admin';
+        const OLD_EMAIL = 'quickcartadmin@gmail.com'; // remove old account
 
         // Hash password
         const salt = await bcrypt.genSalt(10);
         const hashedPassword = await bcrypt.hash(plainPassword, salt);
 
-        // Check if user exists
+        // Remove old admin account if it exists
+        const removed = await User.deleteOne({ email: OLD_EMAIL });
+        if (removed.deletedCount) console.log(`🗑  Removed old admin: ${OLD_EMAIL}`);
+
+        // Check if new user already exists
         let user = await User.findOne({ email });
 
         if (user) {

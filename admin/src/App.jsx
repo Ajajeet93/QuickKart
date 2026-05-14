@@ -12,6 +12,7 @@ const AdminCategories = lazy(() => import('./pages/AdminCategories'));
 const AdminUsers = lazy(() => import('./pages/AdminUsers'));
 const AdminOrders = lazy(() => import('./pages/AdminOrders'));
 const AdminSupport = lazy(() => import('./pages/AdminSupport'));
+const AdminInventory = lazy(() => import('./pages/AdminInventory'));
 
 function App() {
   const dispatch = useDispatch();
@@ -31,8 +32,9 @@ function App() {
             <Route path="products" element={<AdminProducts />} />
             <Route path="categories" element={<AdminCategories />} />
             <Route path="users" element={<AdminUsers />} />
-            <Route path="orders" element={<AdminOrders />} />
-            <Route path="support" element={<AdminSupport />} />
+            <Route path="orders"    element={<AdminOrders />} />
+            <Route path="inventory" element={<AdminInventory />} />
+            <Route path="support"   element={<AdminSupport />} />
           </Route>
         </Routes>
       </Suspense>

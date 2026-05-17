@@ -25,6 +25,9 @@ pipeline {
     agent any
 
     environment {
+        // Fix for Windows Jenkins: Add Git Bash to PATH so 'sh' commands work
+        PATH         = "C:\\Program Files\\Git\\bin;${env.PATH}"
+        
         // Project metadata
         APP_NAME     = 'quickkart'
         NODE_VERSION = '20'
@@ -68,7 +71,7 @@ pipeline {
         stage('Checkout') {
             steps {
                 echo "📥 Stage 1: Checking out source from GitHub..."
-                checkout scm
+                git url: 'https://github.com/Ajajeet93/QuickKart.git', branch: 'main'
                 sh 'git log --oneline -5'
                 echo "Branch: ${env.BRANCH_NAME} | Commit: ${env.GIT_COMMIT?.take(8)}"
             }

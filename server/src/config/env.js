@@ -12,8 +12,8 @@ const envSchema = z.object({
     JWT_SECRET: z.string().min(32).optional(),
     CLIENT_URL: z.string().url().optional(),
     ADMIN_URL: z.string().url().optional(),
-    GOOGLE_CLIENT_ID: z.string(),
-    GOOGLE_CLIENT_SECRET: z.string(),
+    GOOGLE_CLIENT_ID: z.string().optional(),
+    GOOGLE_CLIENT_SECRET: z.string().optional(),
     RENDER: z.string().optional(),
 });
 

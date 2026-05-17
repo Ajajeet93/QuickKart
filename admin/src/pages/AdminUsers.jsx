@@ -11,7 +11,6 @@ const AdminUsers = () => {
         email: '',
         password: '',
         role: 'user',
-        role: 'user',
         phone: ''
     });
 

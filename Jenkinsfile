@@ -60,7 +60,6 @@ pipeline {
         // Keep last 10 builds
         buildDiscarder(logRotator(numToKeepStr: '10'))
         // Don't run concurrent builds on the same branch
-        disableConcurrentBuilds()
         // Add timestamps to log output
         timestamps()
     }

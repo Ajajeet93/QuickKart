@@ -25,9 +25,6 @@ pipeline {
     agent any
 
     environment {
-        // Fix for Windows Jenkins: Add Git Bash to PATH so 'sh' commands work
-        PATH         = "C:\\Program Files\\Git\\bin;${env.PATH}"
-        
         // Project metadata
         APP_NAME     = 'quickkart'
         NODE_VERSION = '20'
@@ -70,10 +67,22 @@ pipeline {
         // ── Stage 1: Checkout ─────────────────────────────────────────────
         stage('Checkout') {
             steps {
-                echo "📥 Stage 1: Checking out source from GitHub..."
-                git url: 'https://github.com/Ajajeet93/QuickKart.git', branch: 'main'
+                echo "📥 Stage 1: Checking out DevOps scripts..."
+                checkout scm
+                
+                echo "📥 Cloning main QuickKart application code..."
+                sh '''
+                    # Clone the main repo into a temporary directory
+                    git clone https://github.com/Ajajeet93/QuickKart.git temp_app
+                    
+                    # Move all application folders (server, client, admin, etc.) to the root workspace
+                    mv temp_app/* .
+                    
+                    # Clean up the temporary folder
+                    rm -rf temp_app
+                '''
+                
                 sh 'git log --oneline -5'
-                echo "Branch: ${env.BRANCH_NAME} | Commit: ${env.GIT_COMMIT?.take(8)}"
             }
         }
 

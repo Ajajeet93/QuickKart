@@ -74,16 +74,7 @@ pipeline {
                 checkout scm
                 
                 echo "📥 Cloning main QuickKart application code..."
-                sh '''
-                    # Clone the main repo into a temporary directory
-                    git clone https://github.com/Ajajeet93/QuickKart.git temp_app
-                    
-                    # Move all application folders (server, client, admin, etc.) to the root workspace
-                    mv temp_app/* .
-                    
-                    # Clean up the temporary folder
-                    rm -rf temp_app
-                '''
+                // The application code is already present via checkout scm
                 
                 sh 'git log --oneline -5'
             }

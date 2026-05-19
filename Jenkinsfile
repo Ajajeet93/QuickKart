@@ -226,14 +226,14 @@ pipeline {
                 // Invalidate CloudFront cache so users get new files immediately
                 sh """
                     aws cloudfront create-invalidation \
-                        --distribution-id ${CLIENT_CF_DIST_ID} \
+                        --distribution-id \${CLIENT_CF_DIST_ID} \
                         --paths "/*" \
-                        --region ${AWS_REGION}
+                        --region \${AWS_REGION}
 
                     aws cloudfront create-invalidation \
-                        --distribution-id ${ADMIN_CF_DIST_ID} \
+                        --distribution-id \${ADMIN_CF_DIST_ID} \
                         --paths "/*" \
-                        --region ${AWS_REGION}
+                        --region \${AWS_REGION}
                 """
 
                 echo "✅ Frontends deployed to S3, CloudFront cache invalidated."
@@ -252,9 +252,9 @@ pipeline {
                     sh "docker save ${LATEST_TAG} | gzip > quickkart-server.tar.gz"
 
                     sh """
-                        scp -i ${SSH_KEY} -o StrictHostKeyChecking=no \
+                        scp -i \${SSH_KEY} -o StrictHostKeyChecking=no \
                             quickkart-server.tar.gz \
-                            ${EC2_USER}@${EC2_HOST}:/tmp/
+                            \${EC2_USER}@\${EC2_HOST}:/tmp/
                     """
 
                     // SSH into EC2: load image into Docker/K3s, restart K8s deployment

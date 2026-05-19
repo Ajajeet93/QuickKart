@@ -42,8 +42,8 @@ pipeline {
         AWS_SECRET_ACCESS_KEY = credentials('AWS_SECRET_ACCESS_KEY')
 
         // S3 bucket names — set these after terraform apply
-        CLIENT_S3_BUCKET = "${APP_NAME}-client"
-        ADMIN_S3_BUCKET  = "${APP_NAME}-admin"
+        CLIENT_S3_BUCKET = "quickkart-client-ed3a3016"
+        ADMIN_S3_BUCKET  = "quickkart-admin-ed3a3016"
 
         // CloudFront distribution IDs — set after terraform apply
         CLIENT_CF_DIST_ID = credentials('CLIENT_CF_DIST_ID')

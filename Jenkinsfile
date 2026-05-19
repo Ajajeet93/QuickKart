@@ -51,7 +51,7 @@ pipeline {
 
         // EC2 connection
         EC2_HOST = credentials('EC2_HOST')
-        EC2_USER = 'ec2-user'
+        EC2_USER = 'ubuntu'
     }
 
     options {
@@ -159,7 +159,7 @@ pipeline {
             steps {
                 echo "⚙️  Stage 5: Building React customer frontend..."
                 dir('client') {
-                    withEnv(["VITE_API_URL=http://${EC2_HOST}:5000"]) {
+                    withEnv(["VITE_API_URL=https://d1l2jawrwgmqiu.cloudfront.net"]) {
                         sh 'npm run build'
                     }
                 }
@@ -172,7 +172,7 @@ pipeline {
             steps {
                 echo "⚙️  Stage 6: Building React admin dashboard..."
                 dir('admin') {
-                    withEnv(["VITE_API_URL=http://${EC2_HOST}:5000"]) {
+                    withEnv(["VITE_API_URL=https://de3rqz4r4hq4z.cloudfront.net"]) {
                         sh 'npm run build'
                     }
                 }
@@ -257,25 +257,22 @@ pipeline {
                             ${EC2_USER}@${EC2_HOST}:/tmp/
                     """
 
-                    // SSH into EC2: load image, stop old container, start new one
+                    // SSH into EC2: load image into Docker/K3s, restart K8s deployment
                     sh """
-                        ssh -i ${SSH_KEY} -o StrictHostKeyChecking=no ${EC2_USER}@${EC2_HOST} '
-                            # Load new image
+                        ssh -i \${SSH_KEY} -o StrictHostKeyChecking=no \${EC2_USER}@\${EC2_HOST} '
+                            # Load new image into Docker
                             docker load < /tmp/quickkart-server.tar.gz
 
-                            # Graceful stop of old container (30s timeout)
-                            docker stop quickkart-server 2>/dev/null || true
-                            docker rm   quickkart-server 2>/dev/null || true
+                            # Also import into K3s containerd just in case
+                            sudo k3s ctr images import /tmp/quickkart-server.tar.gz || true
 
-                            # Start new container
-                            docker run -d \
-                                --name quickkart-server \
-                                --restart unless-stopped \
-                                -p 5000:5000 \
-                                --env-file /opt/quickkart/.env.prod \
-                                ${LATEST_TAG}
+                            # Restart the Kubernetes deployment to pick up the new image
+                            kubectl rollout restart deployment quickkart-server -n quickkart
+                            
+                            # Wait for rollout to finish
+                            kubectl rollout status deployment/quickkart-server -n quickkart --timeout=90s
 
-                            # Cleanup old images (keep last 3)
+                            # Cleanup
                             docker image prune -f --filter "until=24h"
                             rm -f /tmp/quickkart-server.tar.gz
                         '
@@ -290,10 +287,10 @@ pipeline {
             steps {
                 echo "🏥 Stage 10: Verifying deployment health..."
                 script {
-                    // Wait up to 60s for server to become healthy
+                    // Wait up to 60s for server to become healthy on NodePort 30500
                     retry(6) {
                         sleep(10)
-                        sh "curl -f -s http://${EC2_HOST}:5000/api/health | grep -q 'ok'"
+                        sh "curl -f -s http://\${EC2_HOST}:30500/api/health | grep -q 'ok'"
                     }
                 }
                 echo "✅ Health check passed — /api/health returned 200 OK."

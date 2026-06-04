@@ -61,6 +61,8 @@ app.use(
         origin: (origin, callback) => {
             if (!origin || !isProduction) return callback(null, true);
             if (allowedOrigins.includes(origin)) return callback(null, true);
+            // Allow all Vercel domains (including preview branches)
+            if (origin.endsWith('.vercel.app')) return callback(null, true);
             callback(new Error(`CORS blocked: ${origin}`));
         },
         credentials: true,

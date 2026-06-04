@@ -40,7 +40,7 @@ exports.refresh = catchAsync(async (req, res) => {
 
     const { accessCookieOptions, refreshCookieOptions } = require('../../core/utils/jwt');
     const env = require('../../config/env');
-    const isProd = env.NODE_ENV === 'production' || env.RENDER === 'true';
+    const isProd = env.NODE_ENV === 'production';
 
     res.cookie('access_token',  newAccessToken,  accessCookieOptions(isProd));
     res.cookie('refresh_token', newRefreshToken, refreshCookieOptions(isProd));

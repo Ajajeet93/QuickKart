@@ -1,6 +1,6 @@
 const winston = require('winston');
 
-const isProduction = process.env.NODE_ENV === 'production' || process.env.RENDER === 'true';
+const isProduction = process.env.NODE_ENV === 'production';
 
 const format = winston.format.combine(
     winston.format.timestamp({ format: 'YYYY-MM-DD HH:mm:ss' }),

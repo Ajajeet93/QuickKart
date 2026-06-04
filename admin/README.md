@@ -1,16 +1,85 @@
-# React + Vite
+# QuickKart — Admin Dashboard
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+React 18 admin panel for managing the QuickKart e-commerce platform, built with Vite and TailwindCSS.
 
-Currently, two official plugins are available:
+## Features
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+- Product management (create, edit, delete)
+- Category management
+- Order management and status updates
+- User management
+- Support ticket handling
+- Sales analytics and reporting
+- Subscription plan management
 
-## React Compiler
+## Tech Stack
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+| | |
+|-|-|
+| Framework | React 18 |
+| Build Tool | Vite |
+| Styling | TailwindCSS |
+| HTTP Client | Axios |
+| Routing | React Router |
 
-## Expanding the ESLint configuration
+## Getting Started
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+### Prerequisites
+
+- Node.js 18+
+- Backend server running on `http://localhost:5000` (see [`../server`](../server))
+- Admin account in the database (use `server/scripts/create_specific_admin.js`)
+
+### Install & Run
+
+```bash
+npm install
+npm run dev
+```
+
+Runs on **http://localhost:5174**
+
+### Environment Variables
+
+Create a `.env` file (copy from `.env.example`):
+
+```env
+VITE_API_URL=http://localhost:5000
+```
+
+### Available Scripts
+
+```bash
+npm run dev       # Start dev server with HMR
+npm run build     # Production build → dist/
+npm run preview   # Preview production build locally
+npm run lint      # Run ESLint
+```
+
+## Creating an Admin Account
+
+Use the seed scripts in the server directory:
+
+```bash
+cd ../server
+node scripts/create_specific_admin.js
+# or
+node scripts/resetAndCreateAdmin.js
+```
+
+## Project Structure
+
+```
+admin/
+├── public/           # Static assets
+├── src/
+│   ├── assets/       # Images, icons
+│   ├── components/   # Reusable UI components
+│   ├── pages/        # Route-level page components
+│   ├── hooks/        # Custom React hooks
+│   ├── context/      # React Context providers
+│   ├── services/     # API call functions
+│   └── utils/        # Helpers and utilities
+├── index.html
+└── vite.config.js
+```

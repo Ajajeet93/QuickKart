@@ -1,128 +1,162 @@
-# 🛒 QuickKart - Full-Stack E-commerce & Subscription Platform
+# QuickKart — Full Stack E-Commerce Platform
 
-**QuickKart** is a high-performance, feature-rich MERN stack application designed for modern e-commerce. It uniquely combines traditional product purchasing with a powerful **Subscription-as-a-Service (SaaS)** model, allowing users to schedule recurring deliveries (Daily, Weekly, Monthly) with automated wallet-based payments.
+A feature-rich MERN stack e-commerce platform with customer storefront, admin dashboard, and a REST API backend.
 
----
+## 📁 Project Structure
 
-## 🌟 Key Features
-
-### 📅 Enterprise Subscription System
-- **Recurring Deliveries**: Subscribe to products with flexible frequencies (Daily, Weekly, Monthly).
-- **Automated Order Generation**: Integrated Cron jobs process active subscriptions every morning at 9:00 AM to generate automated orders.
-- **Subscription Management**: Pause, Cancel, or Update frequency and delivery address for active subscriptions.
-- **Dynamic Pricing**: Automatic 15% discount applied to all subscription-based items.
-
-### 💳 Integrated Wallet & Payments
-- **Prepaid Wallet**: Users can add funds to their virtual wallet for seamless, one-tap payments.
-- **Transactional Integrity**: Detailed logging of all wallet transactions (Credits/Debits).
-- **Insufficient Balance Alerts**: Smart checks ensure subscriptions only process if the wallet has sufficient funds.
-
-### 🔐 Advanced Authentication
-- **Multi-Factor Auth Support**: Traditional Email/Password login combined with **Google OAuth/One-Tap** integration.
-- **Secure Sessions**: JWT tokens stored in `httpOnly` cookies to prevent XSS attacks.
-
-### 🛠️ Comprehensive Admin Dashboard
-- **Inventory Management**: Full control over products, categories, and stock variants.
-- **Order Lifecyle Control**: Manage orders from `Pending` and `Confirmed` to `Out for Delivery` and `Delivered`.
-- **Customer Support Tickets**: A built-in support module for admins to resolve user queries and return requests.
-- **User Insights**: Manage and view all registered users and their transaction history.
-
-### 🎨 Premium User Experience
-- **Modern Responsive Design**: Built with Tailwind CSS 4 and Framer Motion for smooth, high-end transitions.
-- **State Persistence**: Efficient state management using Redux Toolkit to ensure a fluid, single-page experience.
-
----
-
-## 🛠️ Technology Stack
-
-| Layer | Technologies |
-| :--- | :--- |
-| **Frontend** | React 19, Vite, Redux Toolkit, Tailwind CSS 4, Framer Motion, Radix UI, Lucide React |
-| **Backend** | Node.js, Express.js, node-cron |
-| **Database** | MongoDB, Mongoose ODM |
-| **Security** | JSON Web Tokens (JWT), Bcrypt.js, Google OAuth 2.0 |
-| **Utilities** | Axios, Cookie-Parser, Dotenv |
-
----
-
-## 📂 Project Structure
-
-```text
-QuickKart/
-├── client/           # Customer Frontend (React + Vite)
-│   ├── src/store/    # Redux Slices (Auth, Product, Cart)
-│   └── src/pages/    # Product, Checkout, Subscription Pages
-├── admin/            # Administrative Dashboard (React + Vite)
-│   ├── src/pages/    # Order, Category, and User Management
-│   └── src/components/ # Reusable Admin UI Components
-├── server/           # Express.js Backend API
-│   ├── models/       # Mongoose Schemas (Subscription, Order, User, etc.)
-│   ├── routes/       # API Endpoints (Auth, Wallet, Subscriptions, Search)
-│   └── cron/         # Scheduled Tasks for Subscription Processing
-└── README.md
+```
+project_fullstack/
+├── client/                    # React customer frontend (Vite + TailwindCSS)
+│   └── src/
+│
+├── admin/                     # React admin dashboard (Vite + TailwindCSS)
+│   └── src/
+│
+├── server/                    # Express.js REST API
+│   ├── server.js              # Application entry point
+│   └── src/
+│       ├── modules/           # Feature modules
+│       │   ├── auth/          # JWT + Google OAuth 2.0
+│       │   ├── users/
+│       │   ├── products/
+│       │   ├── categories/
+│       │   ├── orders/
+│       │   ├── cart/
+│       │   ├── wallet/
+│       │   ├── subscriptions/
+│       │   ├── search/
+│       │   ├── support/
+│       │   └── admin/
+│       ├── models/            # Mongoose schemas
+│       ├── config/            # DB, env, OAuth config
+│       └── core/              # Middleware, utilities, logger
+│
+├── .env.example               # Required environment variables template
+└── package.json               # Root workspace scripts
 ```
 
----
+## ⚙️ Tech Stack
 
-## 🚀 Getting Started
+| Layer | Technology |
+|-------|-----------|
+| Frontend | React 18, Vite, TailwindCSS |
+| Backend | Node.js, Express.js |
+| Database | MongoDB Atlas (Mongoose) |
+| Auth | JWT (access + refresh tokens), Google OAuth 2.0 |
+| Logging | Winston |
+| Security | Helmet, express-rate-limit, express-mongo-sanitize |
+
+## 🚀 Quick Start
 
 ### Prerequisites
-- Node.js (v18+)
-- MongoDB (Local or Atlas)
-- Google Cloud Console Project (for OAuth)
 
-### Installation
+- Node.js 18+
+- MongoDB Atlas account (or local MongoDB)
+- Google OAuth credentials (optional, for Google sign-in)
 
-1. **Clone the Repo**
-   ```bash
-   git clone https://github.com/Ajajeet93/QuickKart.git
-   cd QuickKart
-   ```
+### 1. Clone & Install
 
-2. **Setup Server**
-   ```bash
-   cd server
-   npm install
-   # Create a .env file based on .env.example
-   npm run dev
-   ```
+```bash
+git clone https://github.com/Ajajeet93/QuickKart.git
+cd QuickKart
+```
 
-3. **Setup Client**
-   ```bash
-   cd ../client
-   npm install
-   # Create a .env file (VITE_API_URL, etc.)
-   npm run dev
-   ```
+Install dependencies for each app:
 
-4. **Setup Admin**
-   ```bash
-   cd ../admin
-   npm install
-   npm run dev
-   ```
+```bash
+cd server && npm install
+cd ../client && npm install
+cd ../admin && npm install
+```
 
----
+### 2. Environment Variables
 
-## 📝 API Endpoints (Brief)
+```bash
+cp .env.example .env
+# Edit .env and fill in your values
+```
 
-| Endpoint | Method | Description |
-| :--- | :--- | :--- |
-| `/api/auth` | POST | Login/Register/Google Login |
-| `/api/subscriptions` | POST/GET | Create/Manage Recurring Deliveries |
-| `/api/wallet` | POST/GET | Add Funds / Check Balance |
-| `/api/products` | GET | Fetch Product Catalog with Filters |
-| `/api/admin` | GET/PATCH | Admin-only Order and Inventory Management |
+Key variables (see `.env.example` for full list):
 
----
+```env
+MONGODB_URI=mongodb+srv://...
+JWT_ACCESS_SECRET=<min 32 chars>
+JWT_REFRESH_SECRET=<min 32 chars>
+GOOGLE_CLIENT_ID=...
+GOOGLE_CLIENT_SECRET=...
+CLIENT_URL=http://localhost:5173
+ADMIN_URL=http://localhost:5174
+```
+
+### 3. Run Locally
+
+Open three terminals:
+
+```bash
+# Terminal 1 — Backend API
+cd server && npm run dev
+# Runs on http://localhost:5000
+
+# Terminal 2 — Customer Frontend
+cd client && npm run dev
+# Runs on http://localhost:5173
+
+# Terminal 3 — Admin Dashboard
+cd admin && npm run dev
+# Runs on http://localhost:5174
+```
+
+### Health Check
+
+```
+GET http://localhost:5000/api/health
+```
+
+## 🔌 API Overview
+
+All endpoints are prefixed with `/api/v1/`.
+
+| Route | Description |
+|-------|-------------|
+| `POST /auth/register` | Register new user |
+| `POST /auth/login` | Login (returns JWT) |
+| `POST /auth/google` | Google OAuth sign-in |
+| `GET /products` | List products |
+| `GET /products/:id` | Product details |
+| `GET /categories` | List categories |
+| `GET /cart` | Get user cart |
+| `POST /cart` | Add to cart |
+| `GET /orders` | User order history |
+| `POST /orders` | Place order |
+| `GET /wallet` | Wallet balance |
+| `GET /search` | Search products |
+| `GET /api/health` | Server health check |
+
+## 🔐 Environment Variables Reference
+
+See [`.env.example`](.env.example) for the full list of required variables.
+
+## 📜 Scripts
+
+From the root `package.json`:
+
+```bash
+npm run lint        # Run ESLint across all apps
+npm run audit       # Run npm audit across all apps
+```
+
+From within each app directory:
+
+```bash
+npm run dev         # Start dev server
+npm run build       # Production build
+npm run lint        # Lint source files
+```
 
 ## 🤝 Contributing
-Contributions are welcome! Please fork the repository and submit a pull request for any enhancements or bug fixes.
 
----
+See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
 
 ## 📄 License
-This project is licensed under the ISC License.
 
----
-*Created with ❤️ by [Ajajeet93](https://github.com/Ajajeet93)*
+MIT — see [LICENSE](LICENSE) for details.

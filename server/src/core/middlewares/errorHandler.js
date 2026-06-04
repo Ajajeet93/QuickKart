@@ -1,7 +1,7 @@
 const logger = require('../logger/logger');
 const { AppError } = require('../errors/AppError');
 
-const isProduction = process.env.NODE_ENV === 'production' || process.env.RENDER === 'true';
+const isProduction = process.env.NODE_ENV === 'production';
 
 const errorHandler = (err, req, res, next) => {
     let error = { ...err };

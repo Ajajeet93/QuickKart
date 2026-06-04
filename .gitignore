@@ -1,5 +1,4 @@
 # QuickKart root .gitignore
-# INT377 DevOps Project
 
 # ── Environment files (NEVER commit) ─────────────────────────────────────
 .env
@@ -18,18 +17,6 @@ yarn-error.log*
 dist/
 build/
 
-# ── Terraform ─────────────────────────────────────────────────────────────
-.terraform/
-.terraform.lock.hcl
-terraform.tfstate
-terraform.tfstate.backup
-terraform.tfstate.d/
-*.tfvars
-!example.tfvars
-
-# ── Docker ────────────────────────────────────────────────────────────────
-*.tar.gz
-
 # ── Logs ──────────────────────────────────────────────────────────────────
 logs/
 *.log
@@ -46,18 +33,9 @@ desktop.ini
 *.swp
 *.swo
 
-# ── Jenkins ───────────────────────────────────────────────────────────────
-.jenkins/
-
-# ── Grafana data ──────────────────────────────────────────────────────────
-monitoring/grafana/data/
-
 # ── Misc ──────────────────────────────────────────────────────────────────
 scratch/
 *.pid
 
 # ── Security ──────────────────────────────────────────────────────────────
 *.pem
-
-# ── DevOps (kept local / separate repo) ───────────────────────────────────
-devops/

@@ -29,7 +29,7 @@ exports.refresh = catchAsync(async (req, res) => {
             accessCookieOptions, refreshCookieOptions, REFRESH_TOKEN_EXPIRY_MS } = require('../../core/utils/jwt');
     const RefreshToken = require('../../models/RefreshToken');
     const env = require('../../config/env');
-    const isProd = env.NODE_ENV === 'production' || env.RENDER === 'true';
+    const isProd = env.NODE_ENV === 'production';
 
     const oldToken = req.cookies.admin_refresh_token;
     if (!oldToken) return res.status(401).json({ success: false, message: 'No admin refresh token provided' });

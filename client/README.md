@@ -1,16 +1,76 @@
-# React + Vite
+# QuickKart — Customer Frontend
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+React 18 storefront for the QuickKart e-commerce platform, built with Vite and TailwindCSS.
 
-Currently, two official plugins are available:
+## Features
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+- Browse products by category
+- Product search
+- Shopping cart
+- User authentication (JWT + Google OAuth)
+- Order placement and history
+- Wallet system
+- Subscription plans
+- Responsive design
 
-## React Compiler
+## Tech Stack
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+| | |
+|-|-|
+| Framework | React 18 |
+| Build Tool | Vite |
+| Styling | TailwindCSS |
+| HTTP Client | Axios |
+| Routing | React Router |
+| State | Context API / Zustand |
 
-## Expanding the ESLint configuration
+## Getting Started
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+### Prerequisites
+
+- Node.js 18+
+- Backend server running on `http://localhost:5000` (see [`../server`](../server))
+
+### Install & Run
+
+```bash
+npm install
+npm run dev
+```
+
+Runs on **http://localhost:5173**
+
+### Environment Variables
+
+Create a `.env` file (copy from `.env.example`):
+
+```env
+VITE_API_URL=http://localhost:5000
+VITE_GOOGLE_CLIENT_ID=your_google_client_id
+```
+
+### Available Scripts
+
+```bash
+npm run dev       # Start dev server with HMR
+npm run build     # Production build → dist/
+npm run preview   # Preview production build locally
+npm run lint      # Run ESLint
+```
+
+## Project Structure
+
+```
+client/
+├── public/           # Static assets
+├── src/
+│   ├── assets/       # Images, icons
+│   ├── components/   # Reusable UI components
+│   ├── pages/        # Route-level page components
+│   ├── hooks/        # Custom React hooks
+│   ├── context/      # React Context providers
+│   ├── services/     # API call functions
+│   └── utils/        # Helpers and utilities
+├── index.html
+└── vite.config.js
+```

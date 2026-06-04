@@ -21,7 +21,7 @@ const {
 } = require('./jwt');
 const env = require('../../config/env');
 
-const isProduction = env.NODE_ENV === 'production' || env.RENDER === 'true';
+const isProduction = env.NODE_ENV === 'production';
 
 /**
  * Issue a new access + refresh token pair and set httpOnly cookies.

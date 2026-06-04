@@ -25,9 +25,6 @@ main ─────────────────────────
 git clone https://github.com/Ajajeet93/QuickKart.git
 cd QuickKart
 
-# Install root dependencies (Husky pre-commit hooks)
-npm install
-
 # Start a feature
 git checkout develop
 git pull origin develop
@@ -50,7 +47,6 @@ All commit messages MUST follow this format:
 |------|------------|
 | `feat` | New feature |
 | `fix` | Bug fix |
-| `ci` | CI/CD pipeline changes |
 | `docs` | Documentation only |
 | `style` | Code style, formatting |
 | `refactor` | Code refactoring |
@@ -63,8 +59,7 @@ All commit messages MUST follow this format:
 ```bash
 git commit -m "feat(cart): add null safety for deleted products"
 git commit -m "fix(auth): remove redundant double logout call"
-git commit -m "ci: add npm audit stage to Jenkinsfile"
-git commit -m "docs: update README with Docker Compose instructions"
+git commit -m "docs: update README with setup instructions"
 ```
 
 ## Pull Request Process
@@ -72,19 +67,9 @@ git commit -m "docs: update README with Docker Compose instructions"
 1. Push your branch: `git push origin feature/your-feature-name`
 2. Open a PR from your branch → `develop`
 3. PR title must follow Conventional Commits format
-4. PR must pass all CI checks (ESLint, npm audit)
+4. PR must pass all checks (ESLint, npm audit)
 5. Requires 1 reviewer approval before merge
 6. Squash-merge to keep history clean
-
-## Pre-Commit Hooks (Husky)
-
-A Husky pre-commit hook runs **ESLint** automatically before every commit.
-If ESLint reports errors, the commit is rejected — fix the errors first.
-
-```bash
-# To bypass in emergencies (NOT recommended):
-git commit --no-verify -m "emergency fix"
-```
 
 ## Code Style
 
@@ -96,8 +81,7 @@ git commit --no-verify -m "emergency fix"
 ## Security
 
 - Never commit `.env` files (they are in `.gitignore`)
-- Never commit AWS credentials or API keys
-- Use `AWS Secrets Manager` for all production secrets
+- Never commit API keys or secrets
 - Run `npm audit` before every PR
 
 ## Questions?

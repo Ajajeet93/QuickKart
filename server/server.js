@@ -24,11 +24,10 @@ const env            = require('./src/config/env');
 const { connectDB, disconnectDB } = require('./src/config/database');
 const logger         = require('./src/core/logger/logger');
 const errorHandler   = require('./src/core/middlewares/errorHandler');
-const { register, metricsMiddleware } = require('./src/core/utils/metrics');
 
 const app        = express();
 const PORT       = env.PORT;
-const isProduction = env.NODE_ENV === 'production' || env.RENDER === 'true';
+const isProduction = env.NODE_ENV === 'production';
 
 // ── Trust Proxy ───────────────────────────────────────────────────
 // Only enable in production behind a known reverse proxy.
@@ -46,25 +45,11 @@ app.use(
     })
 );
 
-// ── Prometheus Metrics Endpoint ───────────────────────────────────
-// MUST be mounted BEFORE the rate limiter so Prometheus scrapes are not throttled.
-// This is an internal endpoint — in production, restrict access via nginx.
-app.get('/metrics', async (req, res) => {
-    res.setHeader('Content-Type', register.contentType);
-    res.end(await register.metrics());
-});
-
-// ── Metrics Middleware ─────────────────────────────────────────────
-// Tracks every request (method, route, status_code, duration)
-app.use(metricsMiddleware);
 
 // ── CORS ──────────────────────────────────────────────────────────
 const allowedOrigins = [
     env.CLIENT_URL,
     env.ADMIN_URL,
-    // CloudFront production URLs (hardcoded fallback when env vars not set)
-    'https://d1l2jawrwgmqiu.cloudfront.net',
-    'https://de3rqz4r4hq4z.cloudfront.net',
     // Local development
     'http://localhost:5173', 'http://127.0.0.1:5173',
     'http://localhost:5174', 'http://127.0.0.1:5174',
@@ -74,11 +59,9 @@ const allowedOrigins = [
 app.use(
     cors({
         origin: (origin, callback) => {
-            if (!origin || allowedOrigins.includes(origin) || !isProduction) {
-                callback(null, true);
-            } else {
-                callback(new Error(`CORS blocked: ${origin}`));
-            }
+            if (!origin || !isProduction) return callback(null, true);
+            if (allowedOrigins.includes(origin)) return callback(null, true);
+            callback(new Error(`CORS blocked: ${origin}`));
         },
         credentials: true,
     })

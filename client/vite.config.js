@@ -9,8 +9,20 @@ export default defineConfig(({ mode }) => ({
       "@": path.resolve(__dirname, "./src"),
     },
   },
+  // ── Dev Proxy ─────────────────────────────────────────────────────
+  // Forwards /api requests to the Express server so cookies are
+  // treated as same-origin (fixes sameSite:lax cookie rejection).
+  server: {
+    port: 5173,
+    proxy: {
+      '/api': {
+        target: 'http://localhost:5000',
+        changeOrigin: true,
+        secure: false,
+      },
+    },
+  },
   build: {
-    // Drop console.log and debugger statements in production
     minify: 'terser',
     terserOptions: {
       compress: {
@@ -18,7 +30,6 @@ export default defineConfig(({ mode }) => ({
         drop_debugger: true,
       },
     },
-    // Chunk splitting for better caching
     rollupOptions: {
       output: {
         manualChunks: {
@@ -27,9 +38,7 @@ export default defineConfig(({ mode }) => ({
         },
       },
     },
-    // Warn if chunks exceed 1MB
     chunkSizeWarningLimit: 1000,
   },
-  // Prevent source map exposure in production
   ...(mode === 'production' ? { sourcemap: false } : { sourcemap: true }),
 }))

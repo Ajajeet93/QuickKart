@@ -9,8 +9,18 @@ export default defineConfig(({ mode }) => ({
       "@": path.resolve(__dirname, "./src"),
     },
   },
+  // ── Dev Proxy ─────────────────────────────────────────────────────
+  // Forwards /api requests to the Express server so cookies are
+  // treated as same-origin (fixes sameSite:lax cookie rejection).
   server: {
     port: 5174,
+    proxy: {
+      '/api': {
+        target: 'http://localhost:5000',
+        changeOrigin: true,
+        secure: false,
+      },
+    },
   },
   build: {
     minify: 'terser',

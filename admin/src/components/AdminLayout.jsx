@@ -58,10 +58,7 @@ const AdminLayout = () => {
     // Close sidebar on route change
     useEffect(() => { setSidebarOpen(false); }, [location.pathname]);
 
-    // Auth guard
-    useEffect(() => {
-        if (!loading && (!user || user.role !== 'admin')) navigate('/login');
-    }, [user, loading, navigate]);
+    // Auth guard removed — handled by ProtectedRoute in App.jsx
 
     // Fetch live badge counts
     useEffect(() => {
@@ -100,14 +97,7 @@ const AdminLayout = () => {
         return () => document.removeEventListener('mousedown', handler);
     }, []);
 
-    if (loading || !user || user.role !== 'admin') return (
-        <div className="h-screen flex items-center justify-center bg-[#0f1117]">
-            <div className="flex flex-col items-center gap-4">
-                <div className="w-10 h-10 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin" />
-                <p className="text-gray-400 text-sm font-medium">Loading Admin Panel…</p>
-            </div>
-        </div>
-    );
+
 
     const handleLogout = () => { dispatch(logoutUser()); navigate('/login'); };
     const totalNotifs = notifications.length;

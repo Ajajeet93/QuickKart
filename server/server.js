@@ -22,6 +22,7 @@ const mongoSanitize  = require('express-mongo-sanitize');
 
 const env            = require('./src/config/env');
 const { connectDB, disconnectDB } = require('./src/config/database');
+const { connectRedis, disconnectRedis } = require('./src/config/redis');
 const logger         = require('./src/core/logger/logger');
 const errorHandler   = require('./src/core/middlewares/errorHandler');
 
@@ -138,6 +139,7 @@ app.use(errorHandler);
 const startServer = async () => {
     try {
         await connectDB();
+        await connectRedis();
 
         // Cron jobs (start after DB is connected)
         require('./src/cron/subscriptionCron').initCron();
@@ -152,6 +154,7 @@ const startServer = async () => {
             logger.info(`${signal} received — shutting down gracefully`);
             server.close(async () => {
                 await disconnectDB();
+                await disconnectRedis();
                 process.exit(0);
             });
             // Force exit if graceful shutdown hangs after 10s

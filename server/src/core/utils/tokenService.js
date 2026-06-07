@@ -19,6 +19,7 @@ const {
     refreshCookieOptions,
     REFRESH_TOKEN_EXPIRY_MS,
 } = require('./jwt');
+const { blacklistToken } = require('./tokenBlacklist');
 const env = require('../../config/env');
 
 const isProduction = env.NODE_ENV === 'production';
@@ -58,13 +59,16 @@ const issueTokens = async (user, res, type = 'user') => {
 };
 
 /**
- * Revoke a refresh token from DB and clear both cookies.
+ * Revoke a refresh token from DB, blacklist the access token in Redis,
+ * and clear both cookies.
  *
  * @param {string} refreshToken - The raw refresh token string
  * @param {Response} res
  * @param {'user'|'admin'} type
+ * @param {import('express').Request} [req] - Express request (used to read access token cookie)
  */
-const revokeTokens = async (refreshToken, res, type = 'user') => {
+const revokeTokens = async (refreshToken, res, type = 'user', req = null) => {
+    // 1. Delete refresh token from MongoDB
     if (refreshToken) {
         await RefreshToken.deleteOne({ token: refreshToken }).catch(() => {});
     }
@@ -72,6 +76,14 @@ const revokeTokens = async (refreshToken, res, type = 'user') => {
     const accessKey  = type === 'admin' ? 'admin_access_token'  : 'access_token';
     const refreshKey = type === 'admin' ? 'admin_refresh_token' : 'refresh_token';
 
+    // 2. Blacklist the access token in Redis (key: token:<jwt>, value: "invalid")
+    //    TTL is dynamic — derived from the token's own exp claim
+    const accessToken = req?.cookies?.[accessKey];
+    if (accessToken) {
+        await blacklistToken(accessToken);
+    }
+
+    // 3. Clear both cookies from the browser
     const clearOpts = { httpOnly: true, secure: isProduction, sameSite: isProduction ? 'none' : 'lax' };
     res.clearCookie(accessKey,  clearOpts);
     res.clearCookie(refreshKey, clearOpts);

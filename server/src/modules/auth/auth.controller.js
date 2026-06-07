@@ -49,8 +49,8 @@ exports.refresh = catchAsync(async (req, res) => {
 });
 
 exports.logout = catchAsync(async (req, res) => {
-    // revokeTokens handles both DB deletion and cookie clearing (DRY)
-    await revokeTokens(req.cookies.refresh_token, res, 'user');
+    // revokeTokens handles DB deletion, Redis blacklisting, and cookie clearing (DRY)
+    await revokeTokens(req.cookies.refresh_token, res, 'user', req);
     success(res, 200, 'Logged out successfully');
 });
 

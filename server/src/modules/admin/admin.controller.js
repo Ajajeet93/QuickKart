@@ -57,7 +57,7 @@ exports.refresh = catchAsync(async (req, res) => {
 });
 
 exports.logout = catchAsync(async (req, res) => {
-    await revokeTokens(req.cookies.admin_refresh_token, res, 'admin');
+    await revokeTokens(req.cookies.admin_refresh_token, res, 'admin', req);
     success(res, 200, 'Logged out successfully');
 });
 

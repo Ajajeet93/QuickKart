@@ -1,12 +1,13 @@
 const { verifyAccessToken } = require('../utils/jwt');
+const { isTokenBlacklisted } = require('../utils/tokenBlacklist');
 
 /**
  * isAuthenticated — verifies the short-lived ACCESS token from the httpOnly cookie.
+ * Also checks the Redis blacklist to reject tokens invalidated on logout.
  * Sets req.user = { id, name, email, role, iat, exp } on success.
- * Returns 401 if missing or expired — the client interceptor will then
- * transparently call POST /api/auth/refresh to get a new access token.
+ * Returns 401 if missing, expired, or blacklisted.
  */
-const isAuthenticated = (req, res, next) => {
+const isAuthenticated = async (req, res, next) => {
     const token = req.cookies.access_token;
 
     if (!token) {
@@ -17,6 +18,12 @@ const isAuthenticated = (req, res, next) => {
 
     if (!decoded) {
         return res.status(401).json({ message: 'Unauthorized: Access token expired or invalid' });
+    }
+
+    // Check Redis blacklist — token may have been invalidated on logout
+    const blacklisted = await isTokenBlacklisted(token);
+    if (blacklisted) {
+        return res.status(401).json({ message: 'Unauthorized: Token has been revoked' });
     }
 
     req.user = decoded;
@@ -36,9 +43,10 @@ const isAdmin = (req, res, next) => {
 
 /**
  * isAdminAuthenticated — verifies the admin-specific ACCESS token.
+ * Also checks the Redis blacklist to reject tokens invalidated on logout.
  * Uses `admin_access_token` cookie to prevent collision with client app.
  */
-const isAdminAuthenticated = (req, res, next) => {
+const isAdminAuthenticated = async (req, res, next) => {
     const token = req.cookies.admin_access_token;
 
     if (!token) {
@@ -49,6 +57,12 @@ const isAdminAuthenticated = (req, res, next) => {
 
     if (!decoded || decoded.role !== 'admin') {
         return res.status(401).json({ message: 'Unauthorized: Admin access token expired or invalid' });
+    }
+
+    // Check Redis blacklist — token may have been invalidated on logout
+    const blacklisted = await isTokenBlacklisted(token);
+    if (blacklisted) {
+        return res.status(401).json({ message: 'Unauthorized: Token has been revoked' });
     }
 
     req.user = decoded;

@@ -9,6 +9,7 @@ Express.js REST API for the QuickKart e-commerce platform.
 | Runtime | Node.js 18+ |
 | Framework | Express.js |
 | Database | MongoDB Atlas (Mongoose) |
+| Cache / Token Store | Redis (ioredis) |
 | Auth | JWT (access + refresh tokens), Google OAuth 2.0 |
 | Validation | Zod |
 | Security | Helmet, express-rate-limit, express-mongo-sanitize |
@@ -21,6 +22,7 @@ Express.js REST API for the QuickKart e-commerce platform.
 
 - Node.js 18+
 - MongoDB Atlas URI (or local MongoDB)
+- Redis instance — [Redis Cloud](https://redis.io/cloud/) free tier (25 MB) is sufficient
 - Google OAuth credentials (optional)
 
 ### Install & Run
@@ -46,6 +48,13 @@ CLIENT_URL=http://localhost:5173
 ADMIN_URL=http://localhost:5174
 GOOGLE_CLIENT_ID=...
 GOOGLE_CLIENT_SECRET=...
+
+# Redis — Access Token Blacklist
+REDIS_HOST=127.0.0.1
+REDIS_PORT=6379
+REDIS_USERNAME=default
+REDIS_PASSWORD=
+REDIS_TLS=false
 ```
 
 ### Available Scripts
@@ -168,12 +177,13 @@ server/
 │   └── cleanupDb.js
 └── src/
     ├── config/
-    │   ├── database.js    # MongoDB connection
+    │   ├── database.js    # MongoDB connection lifecycle
+    │   ├── redis.js       # Redis connection lifecycle
     │   └── env.js         # Zod-validated environment variables
     ├── core/
     │   ├── logger/        # Winston logger
-    │   ├── middlewares/   # errorHandler, auth guards
-    │   └── utils/         # JWT helpers, pagination, API response
+    │   ├── middlewares/   # errorHandler, auth guards (+ blacklist check)
+    │   └── utils/         # JWT helpers, tokenService, tokenBlacklist, pagination
     ├── cron/
     │   ├── subscriptionCron.js    # Auto-expire subscriptions
     │   └── orderSimulationCron.js # Order status simulation
@@ -216,3 +226,49 @@ node scripts/cleanupDb.js
 |-------|-------|
 | Global | 100 requests / minute per IP |
 | Auth endpoints | 15 requests / minute per IP |
+
+## 🔐 Security — Token Blacklisting
+
+QuickKart implements a **two-layer token invalidation** strategy on logout:
+
+### 1. Refresh Token — MongoDB Whitelist
+
+Every issued refresh token is saved in the `RefreshToken` collection. On logout it is **immediately deleted**. Attempting to reuse a revoked refresh token returns `401 — Refresh token has been revoked`.
+
+A MongoDB TTL index auto-cleans expired documents as a safety net:
+```js
+refreshTokenSchema.index({ expiresAt: 1 }, { expireAfterSeconds: 0 });
+```
+
+### 2. Access Token — Redis Blacklist
+
+Access tokens are short-lived (15 min) and stateless by design. On logout the current access token is stored in Redis:
+
+```
+Key   : token:<jwt_string>
+Value : "invalid"
+TTL   : Remaining seconds from the token's own exp claim (dynamic)
+```
+
+Every protected request checks the blacklist:
+```
+POST /auth/logout
+  → Delete refresh_token from MongoDB
+  → SET token:<access_jwt> "invalid" EX <remaining_seconds> in Redis
+  → Clear access_token + refresh_token cookies
+
+GET /api/v1/* (protected)
+  → Verify JWT signature  ✓
+  → Check Redis blacklist ✓  → 401 "Token has been revoked" if found
+```
+
+**Fail-open**: If Redis is temporarily unavailable, the blacklist check is skipped (logged as a warning) — the app stays online. Adjust to fail-closed in `tokenBlacklist.js` if stricter security is required.
+
+### Why Redis and not just MongoDB?
+
+| | MongoDB | Redis |
+|---|---|---|  
+| Lookup speed | ~5–10 ms | ~0.1–0.5 ms |
+| Auto-expiry | TTL index (eventual) | Native `EX` (exact) |
+| Memory usage | Higher | ~600 bytes/token |
+| Best for | Refresh tokens (7d) | Access tokens (15m) |

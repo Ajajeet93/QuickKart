@@ -14,6 +14,12 @@ const envSchema = z.object({
     ADMIN_URL: z.string().url().optional(),
     GOOGLE_CLIENT_ID: z.string().optional(),
     GOOGLE_CLIENT_SECRET: z.string().optional(),
+    // Redis — Access Token Blacklist
+    REDIS_HOST:     z.string().default('127.0.0.1'),
+    REDIS_PORT:     z.coerce.number().default(6379),
+    REDIS_USERNAME: z.string().default('default'),
+    REDIS_PASSWORD: z.string().optional(),
+    REDIS_TLS:      z.enum(['true', 'false']).transform(v => v === 'true').default('false'),
 });
 
 const _env = envSchema.safeParse(process.env);

@@ -42,6 +42,7 @@ project_fullstack/
 | Frontend | React 18, Vite, TailwindCSS |
 | Backend | Node.js, Express.js |
 | Database | MongoDB Atlas (Mongoose) |
+| Cache / Token Store | Redis (ioredis) |
 | Auth | JWT (access + refresh tokens), Google OAuth 2.0 |
 | Logging | Winston |
 | Security | Helmet, express-rate-limit, express-mongo-sanitize |
@@ -52,6 +53,7 @@ project_fullstack/
 
 - Node.js 18+
 - MongoDB Atlas account (or local MongoDB)
+- Redis instance — [Redis Cloud](https://redis.io/cloud/) free tier (25 MB) is sufficient
 - Google OAuth credentials (optional, for Google sign-in)
 
 ### 1. Clone & Install
@@ -76,7 +78,7 @@ cp .env.example .env
 # Edit .env and fill in your values
 ```
 
-Key variables (see `.env.example` for full list):
+Key variables (see `server/.env.example` for the full list):
 
 ```env
 MONGODB_URI=mongodb+srv://...
@@ -86,6 +88,13 @@ GOOGLE_CLIENT_ID=...
 GOOGLE_CLIENT_SECRET=...
 CLIENT_URL=http://localhost:5173
 ADMIN_URL=http://localhost:5174
+
+# Redis — Access Token Blacklist (see server/README.md for details)
+REDIS_HOST=127.0.0.1
+REDIS_PORT=6379
+REDIS_USERNAME=default
+REDIS_PASSWORD=
+REDIS_TLS=false
 ```
 
 ### 3. Run Locally

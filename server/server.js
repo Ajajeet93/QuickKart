@@ -17,7 +17,7 @@ const express        = require('express');
 const cors           = require('cors');
 const cookieParser   = require('cookie-parser');
 const helmet         = require('helmet');
-const rateLimit      = require('express-rate-limit');
+const { createRateLimiter } = require('./src/core/middlewares/rateLimiter');
 const mongoSanitize  = require('express-mongo-sanitize');
 
 const env            = require('./src/config/env');
@@ -70,25 +70,23 @@ app.use(
     })
 );
 
-// ── Rate Limiting ─────────────────────────────────────────────────
-// Industry standard: 1-minute sliding window.
-// Global  : 100 req/min per IP  — covers normal use + admin polling (~12 req/min).
-// Auth    :  15 req/min per IP  — stricter for login/register endpoints.
-const globalLimiter = rateLimit({
-    windowMs: 60 * 1000,            // 1-minute window
-    max: 100,                       // 100 req/min per IP  (~1.67 req/sec)
-    standardHeaders: true,          // Return RateLimit-* headers
-    legacyHeaders: false,
-    message: { message: 'Too many requests, please try again later.' },
+// ── Rate Limiting (Custom Redis Sliding Window) ───────────────────
+// Uses a ZSET per IP — all 4 Redis ops batched in 1 pipeline round-trip.
+// Global  : 100 req/min per IP  — covers normal use + admin polling.
+// Auth    :  15 req/min per IP  — brute-force protection on sensitive routes.
+const globalLimiter = createRateLimiter({
+    keyPrefix : 'global',
+    windowSec : 60,
+    max       : 100,
+    message   : 'Too many requests, please try again later.',
 });
 app.use(globalLimiter);
 
-const authLimiter = rateLimit({
-    windowMs: 60 * 1000,            // 1-minute window
-    max: 15,                        // 15 login attempts / min per IP
-    standardHeaders: true,
-    legacyHeaders: false,
-    message: { message: 'Too many login attempts, please try again after 1 minute.' },
+const authLimiter = createRateLimiter({
+    keyPrefix : 'auth',
+    windowSec : 60,
+    max       : 15,
+    message   : 'Too many login attempts, please try again after 1 minute.',
 });
 
 app.use('/api/v1/auth/login',    authLimiter);

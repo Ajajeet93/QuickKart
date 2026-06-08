@@ -1,6 +1,6 @@
-const Redis  = require('ioredis');
-const logger = require('../core/logger/logger');
-const env    = require('./env');
+const { createClient } = require('redis');
+const logger           = require('../core/logger/logger');
+const env              = require('./env');
 
 // This holds our Redis connection once it's created
 let redisClient = null;
@@ -11,19 +11,25 @@ const connectRedis = async () => {
     // Use TLS only if explicitly set in env (REDIS_TLS=true)
     const useTLS = env.REDIS_TLS === true;
 
-    redisClient = new Redis({
-        host:     env.REDIS_HOST,
-        port:     env.REDIS_PORT,
+    redisClient = createClient({
+        socket: {
+            host: env.REDIS_HOST,
+            port: env.REDIS_PORT,
+            tls:  useTLS,
+            rejectUnauthorized: false,
+        },
         username: env.REDIS_USERNAME,
         password: env.REDIS_PASSWORD,
-        tls:      useTLS ? { rejectUnauthorized: false } : undefined,
     });
 
-    // Wait until the connection is actually ready before continuing
-    await new Promise((resolve, reject) => {
-        redisClient.once('ready', resolve);
-        redisClient.once('error', reject);
+    // node-redis v4: errors must be handled via the 'error' event listener,
+    // otherwise unhandled errors will crash the process.
+    redisClient.on('error', (err) => {
+        logger.error('Redis client error:', err.message);
     });
+
+    // .connect() returns a promise that resolves when the connection is ready
+    await redisClient.connect();
 
     logger.info('✅ Redis connected');
 };
@@ -36,7 +42,7 @@ const disconnectRedis = async () => {
     }
 };
 
-// Get the active Redis client (used by tokenBlacklist.js)
+// Get the active Redis client (used by rateLimiter, tokenBlacklist, etc.)
 const getRedisClient = () => redisClient;
 
 module.exports = { connectRedis, disconnectRedis, getRedisClient };

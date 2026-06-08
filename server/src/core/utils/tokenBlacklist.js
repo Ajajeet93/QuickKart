@@ -40,7 +40,7 @@ const blacklistToken = async (accessToken) => {
         // Token is already expired — no point storing it
         if (remainingSeconds <= 0) return;
 
-        await redis.set(`${KEY_PREFIX}${accessToken}`, 'invalid', 'EX', remainingSeconds);
+        await redis.set(`${KEY_PREFIX}${accessToken}`, 'invalid', { EX: remainingSeconds });
     } catch (err) {
         // Redis unavailable — log and continue (fail-open)
         console.error('⚠️  tokenBlacklist.blacklistToken error:', err.message);

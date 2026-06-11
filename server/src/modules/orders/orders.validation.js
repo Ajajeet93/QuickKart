@@ -8,11 +8,14 @@ const createOrderSchema = {
             quantity: z.number().int().positive(),
             variant: z.object({
                 weight: z.string(),
-                price: z.number()
+                // NOTE: price is intentionally excluded — server always fetches price from DB
+                // Any client-sent price is ignored to prevent price tampering
             }).optional()
         })).min(1, 'Order must contain at least one item'),
         shippingAddressId: z.string().regex(/^[0-9a-fA-F]{24}$/, 'Invalid Address ID'),
         paymentMethod: z.enum(['Wallet', 'Credit Card', 'Cash on Delivery', 'Stripe']),
+        // NOTE: totalAmount is intentionally excluded — server always recalculates from DB prices
+        // Any client-sent totalAmount is ignored to prevent total tampering
     })
 };
 

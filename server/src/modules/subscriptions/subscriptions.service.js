@@ -58,7 +58,7 @@ class SubscriptionsService {
         if (!startDate) {
             nextDeliveryDate.setDate(nextDeliveryDate.getDate() + 1); // Default to tomorrow
         }
-        nextDeliveryDate.setHours(8, 0, 0, 0); // Default delivery time 8 AM
+        nextDeliveryDate.setHours(9, 0, 0, 0); // Align with cron schedule (runs at 9 AM)
 
         const newSubscription = await subscriptionsRepository.createSubscription({
             userId,

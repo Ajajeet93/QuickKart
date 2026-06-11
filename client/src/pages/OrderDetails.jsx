@@ -242,7 +242,7 @@ const OrderDetails = () => {
                         <div className="p-6">
                             <div className="flex justify-between items-center py-2 text-gray-600 text-sm">
                                 <span>Item Total</span>
-                                <span>₹{order.totalAmount}</span>
+                                <span>₹{Number(order.totalAmount).toFixed(2)}</span>
                             </div>
                             <div className="flex justify-between items-center py-2 text-gray-600 text-sm">
                                 <span>Delivery Fee</span>
@@ -255,7 +255,7 @@ const OrderDetails = () => {
                             <div className="h-px bg-dashed bg-gray-200 my-4"></div>
                             <div className="flex justify-between items-center pt-2">
                                 <span className="text-base font-bold text-gray-900">Total Amount</span>
-                                <span className="text-xl font-bold text-primary">₹{order.totalAmount}</span>
+                                <span className="text-xl font-bold text-primary">₹{Number(order.totalAmount).toFixed(2)}</span>
                             </div>
                             <div className="mt-4 bg-green-50 text-green-700 text-xs px-3 py-2 rounded-lg flex items-center justify-center gap-2 font-medium">
                                 <span className="w-1.5 h-1.5 rounded-full bg-green-500"></span>

@@ -108,10 +108,10 @@ const Checkout = () => {
 
             let url = `${API_URL}/api/v1/orders`;
             let body = {
-                items: items.map(i => ({ product: i._id, quantity: i.quantity, price: i.price })),
-                totalAmount: finalTotal,
+                items: items.map(i => ({ product: i._id, quantity: i.quantity })), // price intentionally omitted — server fetches from DB
                 shippingAddressId: selectedAddress,
                 paymentMethod: effectivePaymentMethod
+                // totalAmount intentionally omitted — server calculates from DB prices
             };
 
             if (isSubscription) {

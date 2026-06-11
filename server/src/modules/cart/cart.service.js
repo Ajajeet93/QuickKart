@@ -1,5 +1,6 @@
 const cartRepository = require('./cart.repository');
-const { NotFoundError } = require('../../core/errors/AppError');
+const Product = require('../../models/Product');
+const { NotFoundError, BadRequestError } = require('../../core/errors/AppError');
 
 class CartService {
     async getCart(userId) {
@@ -11,6 +12,11 @@ class CartService {
     }
 
     async addToCart(userId, productId, quantity = 1, variant) {
+        // ── Stock check before adding to cart ─────────────────────────
+        const product = await Product.findById(productId);
+        if (!product) throw new NotFoundError('Product not found');
+        if (product.stock <= 0) throw new BadRequestError(`"${product.name}" is out of stock`);
+
         let cart = await cartRepository.findCartByUserId(userId);
         if (!cart) {
             cart = await cartRepository.createCart({ userId, items: [] });
@@ -22,6 +28,15 @@ class CartService {
         const itemIndex = cart.items.findIndex(p =>
             p.product._id.toString() === productId && p.variant?.weight === variant?.weight
         );
+
+        const existingQty = itemIndex > -1 ? cart.items[itemIndex].quantity : 0;
+        const requestedTotalQty = existingQty + quantity;
+
+        if (requestedTotalQty > product.stock) {
+            throw new BadRequestError(
+                `Only ${product.stock} unit(s) of "${product.name}" available. You already have ${existingQty} in your cart.`
+            );
+        }
 
         if (itemIndex > -1) {
             cart.items[itemIndex].quantity += quantity;
@@ -53,6 +68,13 @@ class CartService {
             if (quantity <= 0) {
                 cart.items.splice(itemIndex, 1);
             } else {
+                // ── Stock check before updating quantity ──────────────
+                const product = await Product.findById(productId);
+                if (product && quantity > product.stock) {
+                    throw new BadRequestError(
+                        `Only ${product.stock} unit(s) of "${product.name}" available in stock.`
+                    );
+                }
                 cart.items[itemIndex].quantity = quantity;
             }
             return await cartRepository.saveCart(cart);

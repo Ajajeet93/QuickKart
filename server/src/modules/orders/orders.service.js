@@ -31,7 +31,8 @@ class OrdersService {
             const product = await ordersRepository.findProductById(productId);
             if (!product) throw new NotFoundError('One or more products not found');
 
-            const qty = Math.max(1, parseInt(item.quantity, 10) || 1);
+            const MAX_QTY_PER_ITEM = 99;
+            const qty = Math.min(MAX_QTY_PER_ITEM, Math.max(1, parseInt(item.quantity, 10) || 1));
 
             // FIX: Use DB price, not client-sent price
             let unitPrice = product.price;

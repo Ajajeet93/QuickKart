@@ -5,11 +5,13 @@ const Order = require('../models/Order');
 const Transaction = require('../models/Transaction');
 
 const processSubscriptions = async (simulatedDate = null) => {
-    console.log('Running Subscription Cron Job:', simulatedDate || new Date().toISOString());
+    const runAt = simulatedDate ? new Date(simulatedDate) : new Date();
+    console.log('Running Subscription Cron Job:', runAt.toISOString());
 
     try {
-        const today = simulatedDate ? new Date(simulatedDate) : new Date();
-        today.setHours(0, 0, 0, 0);
+        // End-of-day cutoff: catches subscriptions with nextDeliveryDate at 8 AM, noon, etc.
+        const today = new Date(runAt);
+        today.setHours(23, 59, 59, 999);
 
         // Find all active subscriptions due today or before (catch-up)
         const subscriptions = await Subscription.find({
@@ -99,7 +101,7 @@ const processSubscriptions = async (simulatedDate = null) => {
                     }
 
                     sub.nextDeliveryDate = newNextDate;
-                    sub.lastDeliveryDate = today;  // Bug Fix 3: update lastDeliveryDate
+                    sub.lastDeliveryDate = runAt;  // actual run time, not end-of-day cutoff
                     await sub.save();
 
                     console.log(`✅ Subscription ${sub._id}: Processed (₹${totalAmount.toFixed(2)}) | Next: ${newNextDate.toDateString()}`);

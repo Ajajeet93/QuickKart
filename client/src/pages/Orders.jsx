@@ -102,7 +102,7 @@ const Orders = () => {
                                     </div>
 
                                     <div className="flex items-center gap-3">
-                                        <span className="text-lg font-bold text-gray-900">₹{order.totalAmount}</span>
+                                        <span className="text-lg font-bold text-gray-900">₹{Number(order.totalAmount).toFixed(2)}</span>
                                         <div className="w-8 h-8 rounded-full border border-gray-200 flex items-center justify-center text-gray-400">
                                             <ChevronRight size={16} />
                                         </div>

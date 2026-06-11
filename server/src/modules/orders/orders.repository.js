@@ -39,7 +39,7 @@ class OrdersRepository {
     findUserOrders(userId) {
         return Order.find({ userId })
             .select('_id items totalAmount orderType paymentStatus status createdAt paymentMethod shippingAddress subscriptionId deliverySlot')
-            .populate('items.product', 'name image price')
+            .populate('items.product', 'name image') // ⚠️ Do NOT include 'price' — item.price is the snapshotted order-time price
             .populate('shippingAddress')
             .sort({ createdAt: -1 });
     }
@@ -49,7 +49,7 @@ class OrdersRepository {
         if (userId) query.userId = userId; // scoped to user unless admin
         return Order.findOne(query)
             .select('_id items totalAmount orderType paymentStatus status createdAt paymentMethod shippingAddress subscriptionId deliverySlot')
-            .populate('items.product', 'name image price categoryId')
+            .populate('items.product', 'name image categoryId') // ⚠️ Do NOT include 'price' — item.price is the snapshotted order-time price
             .populate('shippingAddress');
     }
 

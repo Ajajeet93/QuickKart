@@ -6,8 +6,8 @@ const addToCartSchema = {
         quantity: z.number().int().positive().optional(),
         variant: z.object({
             weight: z.string(),
-            price: z.number()
-        })
+            // price intentionally excluded — server fetches price from DB at order time
+        }).optional()
     })
 };
 
